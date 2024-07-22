@@ -1,0 +1,69 @@
+---
+title: "b站生信课01-2"
+output: html_document
+date: "2024-07-22"
+---
+
+准备数据：完成初步筛选（既有生存数据也有表达数据的）surv_data生存数据，完成初步筛选、未进行肿瘤样本筛选的、完成基因id转基因名的、取平均值后的counts_agg数据，以及标明是哪种组织的sample_type
+```{r}
+rm(list=ls());
+load("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课01\\data\\counts.rda");
+load("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课01\\data\\surv_data.rda");
+load("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课01\\data\\sample_type.rda");
+if(exists("counts_agg"))  # 为方便展示，用counts代替counts_agg
+{
+  counts <- counts_agg;
+  rm(counts_agg)
+}
+
+```
+counts：行名是基因名，列名是样本id，每个数据是基因在样本的表达量。我们在上节中取的平均值是对同基因名的行取平均值，使同一基因名只对应一组表达量
+surv_data：行名是样本id，列名是os等生存信息
+sample_type：一个df，用来标识每个样本的类型，与counts的列名对应，即sample_type的第n个数据表明counts的第n列的类型
+
+```{r}
+is_tumor <- sample_type[, 1] == 'tumor';  # 每个样本是不是肿瘤样本
+is_normal <- sample_type[, 1] == 'normal';  # 每个样本是不是正常样本
+counts_tumor <- counts[, is_tumor];  # 取出所有的肿瘤样本
+counts_normal <- counts[, is_normal];  # 取出所有的正常样本
+surv_tumor <- surv_data[is_tumor, ];
+surv_normal <- surv_data[is_normal, ];
+```
+
+开始差异分析：
+首先将肿瘤组随机分为两等份，一份与正常组织联合起来作差异分析，另一份用于后续的模型验证
+使用`randomizr`包
+```{r}
+if(!require("randomizr", quietly = T))
+{
+  BiocManager::install("randomizr");
+}
+```
+
+```{r}
+grp <- complete_ra(494, num_arms = 2, conditions = c('training', 'validation'));
+# 表示将494个样本随机分成两组，分别为training训练组和validation验证组
+view(grp);
+# 可以看到得到的一个索引，标志第n个样本被分到了哪组
+is_training <- grp == 'training';  
+is_validation <- grp == 'validation';
+# 进一步简化成像is_tumor一样的bool值数组
+```
+将counts_tumor分为训练和验证组，其中训练组要与正常组合并作差异分析
+```{r}
+counts_tumor_traning <- counts_tumor[, is_training];
+# 取出一部分列作为训练组
+counts_traning <- cbind(counts_tumor_traning, counts_normal);  # 进行合并（注意是增加列），得到训练组
+counts_validation <- counts_tumor[, is_validation];
+
+# 生存信息处理方式同上，区别是筛选行、合并时增加行
+# 这里给每个样本都添加一个标记信息，标明是肿瘤组的还是正常组的，方便后续操作
+surv_tumor$type <- "tumor";
+surv_normal$type <- "normal";
+surv_tumor_training <- surv_tumor[is_training, ];
+surv_traning <- rbind(surv_tumor_training, surv_normal);
+surv_validation <- surv_tumor[is_validation, ];
+```
+结果中训练组都有291个数据，验证组有247个数据
+
+
