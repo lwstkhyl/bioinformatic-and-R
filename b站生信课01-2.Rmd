@@ -30,7 +30,7 @@ surv_tumor <- surv_data[is_tumor, ];
 surv_normal <- surv_data[is_normal, ];
 ```
 
-开始差异分析：
+差异分析前的数据分组：
 首先将肿瘤组随机分为两等份，一份与正常组织联合起来作差异分析，另一份用于后续的模型验证
 使用`randomizr`包
 ```{r}
@@ -54,6 +54,7 @@ is_validation <- grp == 'validation';
 counts_tumor_traning <- counts_tumor[, is_training];
 # 取出一部分列作为训练组
 counts_traning <- cbind(counts_tumor_traning, counts_normal);  # 进行合并（注意是增加列），得到训练组
+counts_traning <- round(counts_traning);  # 取整数，以便后续差异分析（上一节末尾取平均值时可能出现小数）
 counts_validation <- counts_tumor[, is_validation];
 
 # 生存信息处理方式同上，区别是筛选行、合并时增加行
@@ -64,6 +65,70 @@ surv_tumor_training <- surv_tumor[is_training, ];
 surv_traning <- rbind(surv_tumor_training, surv_normal);
 surv_validation <- surv_tumor[is_validation, ];
 ```
-结果中训练组都有291个数据，验证组有247个数据
+结果中训练组都有291个数据，验证组有247个数据，counts和生存信息的分组方式相同
+
+差异分析：使用DESeq2包
+```{r}
+if(!require("DESeq2", quietly = T))
+{
+  BiocManager::install("DESeq2");
+}
+library("DESeq2");
+```
+
+准备分组信息diff_group：
+```{r}
+diff_group <- surv_traning[, 'type'];  # 使用上面的标记信息，获取训练组每个位置的数据是肿瘤还是正常
+diff_group <- as.data.frame(diff_group);
+colnames(diff_group) <- c("type");  # 重命名列
+diff_group$type <- as.factor(diff_group$type);  # 转成factor以适配差异分析函数
+```
+
+```{r}
+dds <- DESeqDataSetFromMatrix(
+  countData = counts_traning,  # 差异分析的数据
+  colData = diff_group,  # 分组信息
+  design = ~type  # 分组信息中哪列是标志列
+  );  # 获取要分析的对象dds
+dds <- DESeq(dds);  # 进行分析
+res <- results(dds, alpha = 0.05)  # 对结果进行分析，设定FDR=0.05
+resSig <- subset(res, (abs(log2FoldChange) > 0.58) & padj < 0.05);  # 结果筛选
+resSig <- as.data.frame(resSig);  # 为方便查看转成df格式
+view(resSig);
+diff_gene <- rownames(resSig);  # 得到差异表达的基因名
+```
+padj设定p值；FoldChange表示基因差异的大小，理论上只要绝对值>1就表示有差异，此时log~2~FoldChange>0，这里为了筛选掉那些差异化表达很小的基因，所以取>0.58
+
+获取ADME基因，使用readxl包中的函数读取数据
+```{r}
+if(!require("readxl", quietly = T))
+{
+  install.packages("readxl");
+}
+adme <- read_excel("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课01\\data\\Table S1.xlsx", sheet = "ADME genes in 21 cancers");
+adme_HNSC <- adme[, 7];  # 取到HNSC的adme基因
+adme_HNSC <- na.omit(adme_HNSC);  # 去除空值
+adme_HNSC <- as.matrix(adme_HNSC);  # 转换成matrix，方便取交集（只有一列的matrix相当于数组）
+```
+
+获取差异化表达的adme基因，即对ADME基因与差异化表达基因取交集
+```{r}
+special_gene <- intersect(adme_HNSC, diff_gene);
+view(special_gene);
+# 存储数据
+save(special_gene, file = "special_gene.rda");
+```
+
+
+
+
+
+
+
+
+
+
+
+
 
 
