@@ -13,6 +13,8 @@
 - [ggplot2进阶](#ggplot2进阶)
     - [更多画子图的方式](#更多画子图的方式)
       - [cowplot包](#cowplot包)
+      - [gridExtra包](#gridextra包)
+      - [ggExtra包](#ggextra包)
 
 <!-- /code_chunk_output -->
 
@@ -77,3 +79,127 @@ plot +
 ```
 表示"A"在x=0 y=1的位置，"B"在x=0 y=0.5的位置，"C"在x=0.5 y=0.5的位置
 ![cowplot包3](./md-image/cowplot包3.png){:width=400 height=400}
+###### gridExtra包
+```
+if (!require("gridExtra")){ 
+  install.packages("gridExtra");
+  library("gridExtra");
+} 
+```
+**先创建子图对象**：
+```
+df <- ToothGrowth
+df$dose <- as.factor(df$dose)
+
+bp <- ggplot(df, aes(x=dose, y=len, color=dose)) +
+  geom_boxplot() + 
+  theme(legend.position = "none") + 
+  labs( tag = "A");
+dp <- ggplot(df, aes(x=dose, y=len, fill=dose)) +
+  geom_dotplot(binaxis='y', stackdir='center')+
+  stat_summary(fun.data=mean_sdl, mult=1, geom="pointrange", color="red")+
+  theme(legend.position = "none") + 
+  labs( tag = "B");
+vp <- ggplot(df, aes(x=factor(dose), y=len)) +
+  geom_violin()+
+  geom_boxplot(width=0.1) + 
+  labs( tag = "C");
+sc <- ggplot(df, aes(x=dose, y=len, color=dose, shape=dose)) +
+  geom_jitter(position=position_jitter(0.2))+
+  theme(legend.position = "none") +
+  theme_gray() + 
+  labs( tag = "D");
+```
+`grid.arrange(子图对象1, 子图对象2, ... , ncol, nrow)`指定行列数：
+```
+grid.arrange(bp, dp, vp, sc, ncol=2, nrow =2);
+```
+![gridExtra包1](./md-image/gridExtra包1.png){:width=400 height=400}
+使用`layout_matrix`参数：由一个矩阵确定绘图区域的每个格子都画哪些图：
+```
+grid.arrange(bp, dp, vp, sc, ncol = 2, 
+             layout_matrix = cbind(c(1,1,1), c(2,3,4)));
+```
+![gridExtra包2](./md-image/gridExtra包2.png){:width=400 height=400}
+- `c(1,1,1)`是第一列画哪些图，全是1就全画第一张图
+- `c(2,3,4)`是第二列画第2 3 4张图
+
+`cbind(c(1,1,1), c(2,3,4))`矩阵的样子：
+```
+     [,1] [,2]
+[1,]    1    2
+[2,]    1    3
+[3,]    1    4
+```
+**另一个例子**：
+```
+grid.arrange(bp, dp, vp, sc, ncol = 3, 
+             layout_matrix = cbind(c(1,1), c(2,2), c(3,4)));
+```
+![gridExtra包3](./md-image/gridExtra包3.png){:width=400 height=400}
+
+---
+
+**gridExtra包与图例**：
+实现效果：让两张图共享一个图例，图例显示在两张图的正上方
+思路：把图例画成一张图，使用`grid.arrange`让第一行是图例，第二行是两张图
+```
+get_legend <- function(myggplot){
+  tmp <- ggplot_gtable(ggplot_build(myggplot))
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  legend <- tmp$grobs[[leg]]
+  return(legend)
+}
+```
+该函数接收一个图，返回这个图中的图例
+```
+# 第一张子图（有图例）
+bp <- ggplot(df, aes(x=dose, y=len, color=dose)) +
+  geom_boxplot() + 
+  labs(tag = "A") +
+  theme(legend.position = "top");  # 让图例在图的上方
+# 第二张子图（无图例）
+vp <- ggplot(df, aes(x=dose, y=len, color=dose)) +
+  geom_violin()+ 
+  geom_boxplot(width=0.1) + 
+  labs( tag = "B") +
+  theme(legend.position="none");  # 去掉图例
+# 将第一张子图的图例提取出来
+legend <- get_legend(bp);
+# 再删去第一张子图的图例
+bp2 <- bp + theme(legend.position="none");
+```
+绘图：
+```
+grid.arrange(legend, bp2, vp,  ncol=2, nrow = 2, 
+             layout_matrix = rbind(c(1,1), c(2,3)),
+             widths = c(2.7, 2.7), heights = c(0.2, 2.5));
+```
+![gridExtra包4](./md-image/gridExtra包4.png){:width=300 height=300}
+其中widths和heights指定了第一行和第二行的宽高，第一行因为是图例，所以高度较小
+`rbind(c(1,1), c(2,3))`矩阵的样子：
+```
+     [,1] [,2]
+[1,]    1    1
+[2,]    2    3
+```
+即第一行的两个格子全是第一张图的，第二行分别是第2/3张图
+###### ggExtra包
+用于向已有图中添加边缘直方图(marginal histograms)，展示数据的分布状况
+```
+if (!require("ggExtra")){ 
+  install.packages("ggExtra");
+  library("ggExtra");
+} 
+```
+一个基本图：
+```
+(piris <- ggplot(iris, aes(Sepal.Length, Sepal.Width, colour = Species)) +
+  geom_point());
+```
+![ggExtra包1](./md-image/ggExtra包1.png){:width=300 height=300}
+添加边缘直方图：
+```
+ggMarginal(piris, groupColour = TRUE, groupFill = TRUE);
+```
+![ggExtra包2](./md-image/ggExtra包2.png){:width=300 height=300}
