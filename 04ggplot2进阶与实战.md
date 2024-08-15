@@ -15,6 +15,11 @@
       - [cowplot包](#cowplot包)
       - [gridExtra包](#gridextra包)
       - [ggExtra包](#ggextra包)
+    - [在图中写公式或统计信息](#在图中写公式或统计信息)
+      - [如何写公式](#如何写公式)
+      - [调整公式位置--hjust/vjust/angle](#调整公式位置-hjustvjustangle)
+      - [希腊字符](#希腊字符)
+      - [更多公式写法](#更多公式写法)
 
 <!-- /code_chunk_output -->
 
@@ -203,3 +208,176 @@ if (!require("ggExtra")){
 ggMarginal(piris, groupColour = TRUE, groupFill = TRUE);
 ```
 ![ggExtra包2](./md-image/ggExtra包2.png){:width=300 height=300}
+##### 在图中写公式或统计信息
+###### 如何写公式
+先看一个例子：
+```
+m = lm(Fertility ~ Education, swiss);  # 回归拟合分析
+c = cor.test( swiss$Fertility, swiss$Education );  # 相关性分析
+eq <- substitute(  # 写公式
+  atop( 
+    paste( italic(y), " = ",  a + b %.% italic(x), sep = ""),
+    paste( italic(r)^2, " = ", r2, ", ", italic(p)==pvalue, sep = "" ) 
+  ),
+  list(
+    a = as.vector( format(coef(m)[1], digits = 2) ),
+    b =  as.vector( format(coef(m)[2], digits = 2) ),
+    r2 =  as.vector( format(summary(m)$r.squared, digits = 2) ),
+    pvalue =  as.vector( format( c$p.value , digits = 2) ) 
+  )
+); 
+eq <- as.character(as.expression(eq));  # 先把eq转成公式，再变成字符串，以便写入图中
+ggplot(swiss, aes( x = Education,  y = Fertility ) ) +  # 画图
+  geom_point( shape = 20 ) +  # 散点图
+  geom_smooth( se = T ) +  # 拟合曲线
+  geom_text( data = NULL,  # 写文字
+             aes( x = 30, y = 80, label= eq, hjust = 0, vjust = 1),  # 文字的内容和位置
+             size = 4, parse = TRUE, inherit.aes=FALSE);
+```
+![在图中写公式或统计信息1](./md-image/在图中写公式或统计信息1.png){:width=300 height=300}
+- `atop(<equation_1> , <equation_2>)`将两个公式上下放置，返回一个`<equation>`。其中`italic`函数将普通字符转为斜体加粗的公式变量形式
+- `substitute(<equation>, list(变量名=值,...))`将公式中的变量名替换为数值，如上例中就是替换了`a` `b` `r2` `pvalue`
+- `geom_text`
+  - `data`是否需要继承前面的画图数据`swiss`
+  - `aes(x, y, label)`标签的`x`/`y`位置及内容`label`
+  - `size`文字大小
+  - `family`字体
+  - `nudge_x`/`nudge_y`设置文字距原坐标点的距离
+  - `check_overlap=T`设置不画与同一层中的上一个文本重叠的文本
+  - `parse=T`将字符串表示成公式形式
+  - `inherit.aes=F`不继承之前的aes设置
+
+**公式的写法1**：
+```
+paste( italic(y), " = ",  a + b %.% italic(x), sep = "")
+paste( italic(r)^2, " = ", r2, ", ", italic(p)==pvalue, sep = "" )
+```
+![在图中写公式或统计信息2](./md-image/在图中写公式或统计信息2.png){:width=200 height=200}
+**公式的写法2**（不使用paste函数拼接）：
+```
+italic(y) == a + b %.% italic(x)
+italic(r)^2~"="~r2*","~italic(p)==pvalue
+```
+![在图中写公式或统计信息3](./md-image/在图中写公式或统计信息3.png){:width=300 height=300}
+在这种方法中，引号两边必须有`*`或`~`字符，`~`表示空格，`*`表示什么都没有，`~~`表示两个空格
+**公式中的代数负号**：
+![在图中写公式或统计信息8](./md-image/在图中写公式或统计信息8.png){:width=500 height=500}
+###### 调整公式位置--hjust/vjust/angle
+[参考文章](https://juejin.cn/post/7130987741747085349)
+- `hjust/vjust`调整水平/垂直方向的位置
+  - `hjust`取值通常为0-1，0是左对齐（默认）、0.5是居中、1是右对齐
+  - `vjust`取正值就是垂直向下移动，负值是向上移动
+- `angle`使文本绕中心点旋转一定角度，取值为整数（正--逆时针、负--顺时针），单位为°
+
+这三个参数可被用于各种需要写文字的地方，如坐标轴标签、文本注释等等
+**例1**：
+```
+df = data.frame(team=c('The Amazing Amazon Anteaters',
+                       'The Rowdy Racing Raccoons',
+                       'The Crazy Camping Cobras'),
+                points=c(14, 22, 11));
+ggplot(data=df, aes(x=team, y=points)) +
+  geom_bar(stat='identity') +
+  theme(axis.text.x = element_text(angle=90)) ;
+```
+![在图中写公式或统计信息4](./md-image/在图中写公式或统计信息4.png){:width=400 height=400}
+使用hjust和vjust参数来调整x轴标签，使其与x轴上的刻度线更紧密地排列
+```
+ggplot(data=df, aes(x=team, y=points)) +
+  geom_bar(stat='identity') +
+  theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1));
+```
+![在图中写公式或统计信息5](./md-image/在图中写公式或统计信息5.png){:width=400 height=400}
+可以看到x轴标签向左/上移动了一些
+**例2**：
+```
+df <- data.frame(player=c('Brad', 'Ty', 'Spencer', 'Luke', 'Max'),
+                 points=c(17, 5, 12, 20, 22),
+                 assists=c(4, 3, 7, 7, 5));
+ggplot(df) +
+  geom_point(aes(x=points, y=assists)) + 
+  geom_text(aes(x=points, y=assists, label=player));
+```
+![在图中写公式或统计信息6](./md-image/在图中写公式或统计信息6.png){:width=300 height=300}
+将文字向下移动使更容易阅读：
+```
+ggplot(df) +
+  geom_point(aes(x=points, y=assists)) + 
+  geom_text(aes(x=points, y=assists, label=player), vjust=1.2);
+```
+![在图中写公式或统计信息7](./md-image/在图中写公式或统计信息7.png){:width=300 height=300}
+###### 希腊字符
+`geom_text(aes(label="alpha"), parse=T)`
+希腊字符的英文写法：
+![在图中写公式或统计信息9](./md-image/在图中写公式或统计信息9.png){:width=300 height=300}
+如何画出这个图？
+思路：先画出4x6个点，再对点添加文本
+准备数据：
+```
+greeks <- c("Alpha", "Beta", "Gamma", "Delta", "Epsilon", "Zeta",
+            "Eta", "Theta", "Iota", "Kappa", "Lambda", "Mu",
+            "Nu", "Xi", "Omicron", "Pi", "Rho", "Sigma",
+            "Tau", "Upsilon", "Phi", "Chi", "Psi", "Omega");
+dat <- data.frame( x = rep( 1:6, 4 ), y = rep( 4:1, each = 6), greek = greeks );  # rep是将数组复制多少次  
+```
+![在图中写公式或统计信息10](./md-image/在图中写公式或统计信息10.png){:width=300 height=300}
+即每个文本对应的xy坐标
+绘图：
+```
+plot2 <- 
+  ggplot( dat, aes(x=x,y=y) ) + 
+  geom_point(size = 0) +
+  geom_text( aes( x, y + 0.1, label = tolower( greek ) ), size = 10, parse = T ) +
+  geom_text( aes( x, y - 0.1, label = tolower( greek ) ), size = 5 );
+```
+注意两个`geom_text`的`label`都相同，但一个是写希腊符号，另一个是写普通英文，区别是`parse = T`参数，它控制是否要对字符串进行公式化转换
+###### 更多公式写法
+**例1**：分数、根号、指数
+```
+eq <- expression(
+  paste(
+    frac(1, sigma*sqrt(2*pi)), 
+    " ",
+    plain(e)^{frac(-(x-mu)^2, 2*sigma^2)}
+  )
+);
+```
+![更多公式写法1](./md-image/更多公式写法1.png){:width=150 height=150}
+**例2**：`bquote`函数
+```
+x <- 1.24;
+y <- 0.6;
+ex <- bquote(
+  .(
+    parse(
+        text = paste( 
+          "observed (", 
+          "italic(R)^2==",
+          x,  
+          "^bold(", x, "), 
+          n == ", y, 
+          ")", 
+          sep = "  " 
+        )
+    )
+  ) 
+);
+```
+![更多公式写法2](./md-image/更多公式写法2.png){:width=100 height=100}
+**例3**：`ggtitle()`指定标题不用写`parse = T`
+```
+x_mean <- 1.5;
+x_sd <- 1.2;
+ex <- substitute(
+    paste(
+      X[i], 
+      " ~ N(", mu, "=", m, ", ", 
+      sigma^2, "=", s2, ")"
+    ),
+    list(m = x_mean, s2 = x_sd^2)
+);
+ggplot( data.frame( x = rnorm(100, x_mean, x_sd) ), aes( x ) ) +
+    geom_histogram( binwidth=0.5 ) +  # 直方图
+    ggtitle(ex);  # 添加标题
+```
+![更多公式写法3](./md-image/更多公式写法3.png){:width=300 height=300}
