@@ -20,6 +20,12 @@
       - [调整公式位置--hjust/vjust/angle](#调整公式位置-hjustvjustangle)
       - [希腊字符](#希腊字符)
       - [更多公式写法](#更多公式写法)
+    - [先计算再做图--画图函数的计算方法](#先计算再做图-画图函数的计算方法)
+    - [position参数--以柱形图为例](#position参数-以柱形图为例)
+      - [堆叠柱状图(stacked bars)](#堆叠柱状图stacked-bars)
+      - [并列柱状图](#并列柱状图)
+    - [主题](#主题)
+- [ggplot2实战](#ggplot2实战)
 
 <!-- /code_chunk_output -->
 
@@ -381,3 +387,202 @@ ggplot( data.frame( x = rnorm(100, x_mean, x_sd) ), aes( x ) ) +
     ggtitle(ex);  # 添加标题
 ```
 ![更多公式写法3](./md-image/更多公式写法3.png){:width=300 height=300}
+##### 先计算再做图--画图函数的计算方法
+先看一个例子：
+```
+# 准备数据
+grades2 <- read_delim( file = "data/grades2.txt", delim = "\t",
+                       quote = "", col_names = T);
+knitr::kable( grades2 );
+```
+![默认计算方法1](./md-image/默认计算方法1.png){:width=200 height=200}
+现在要画出每位学生及格的课程数，使用filter筛选行即可
+```
+ggplot( grades2 %>% dplyr::filter( grade >= 60 ), 
+        aes( name ) ) +
+  geom_bar();
+```
+![默认计算方法2](./md-image/默认计算方法2.png){:width=300 height=300}
+仔细观察上面的函数，我们只是筛选了行并给出了x轴取值，并没有分组和计算行数，但`geom_bar()`仍给出了正确的结果
+这是因为`geom_bar()`中有一个默认的参数`stat = "count"`，它表示画图函数对数据的统计方法，柱状图默认是按x轴的数据分组并计算行数
+以上函数实际相当于：
+```
+# 先做统计
+cnt <- grades2 %>% 
+  group_by( name ) %>% 
+  summarise( cnt = sum( grade >= 60 )  );
+ggplot( cnt, aes( x = name, y = cnt ) ) +
+  geom_bar( stat = "identity" );  # 取消默认统计方法，按指定的df画图
+```
+其它画图函数的默认计算方法：
+- `geom_bar` : count
+- `geom_boxplot` : boxplot
+- `geom_count` : sum
+- `geom_density` : density
+- `geom_histogram` : bin
+- `geom_quantile` : quantile
+##### position参数--以柱形图为例
+###### 堆叠柱状图(stacked bars)
+应用场景：宏基因组多样本物种丰度图
+![堆叠柱状图1](./md-image/堆叠柱状图1.png){:width=300 height=300}
+方法：为`geom_bar()`指定参数`position = "stack"`
+例：
+```
+# 准备数据
+speabu <-read_tsv( file = "data/mock_species_abundance.txt"  );
+head( speabu );
+```
+![堆叠柱状图2](./md-image/堆叠柱状图2.png){:width=150 height=150}
+相同id的画一个柱子，柱子堆叠的每部分颜色不同（根据genus列来取），柱子高度由abundance列决定
+```
+ggplot( speabu, aes( x = id, y = abundance, fill = genus ) ) + 
+  geom_bar( stat = "identity", position = "stack", color = "black", width = 0.2 );
+```
+![堆叠柱状图3](./md-image/堆叠柱状图3.png){:width=300 height=300}
+注意fill是填充色，而color是边框色
+
+---
+
+**需求1：指定Genus展示顺序**
+思路：使用factor对Genus列进行重排
+```
+speabu$genus <- factor( speabu$genus, 
+                        levels = rev( c( "Enterobacteriaceae", "Lachnospiraceae", "Bacteroidaceae", "Lactobacillaceae", "Clostridiaceae", 
+                        "Ruminococcaceae", "Prevotellaceae", "Erysipelotrichaceae", "Streptococcaceae", "Enterococcaceae", "Other" ) ) );
+ggplot( speabu, aes( x = id, y = abundance, fill = genus ) ) + 
+  geom_bar( stat = "identity", position = "stack", color = "black", width = 0.8 );
+```
+![堆叠柱状图4](./md-image/堆叠柱状图4.png){:width=300 height=300}
+
+---
+
+需求2：按丰度中值大小排序
+使用reorder函数：`reorder(返回结果列, 顺序决定列, 排序方法)`
+```
+speabu$genus <- reorder( speabu$genus, speabu$abundance, median );
+ggplot( speabu, aes( x = id, y = abundance, fill = genus ) ) + 
+  geom_bar( stat = "identity", position = "stack", color = "white", width = 0.8 );
+```
+![堆叠柱状图5](./md-image/堆叠柱状图5.png){:width=300 height=300}
+
+---
+
+**需求3：显示数值**
+即每个堆叠部分的占比（abundance值）
+```
+# 先计算显示位置
+speabu <- speabu %>% 
+  arrange( id, desc( factor( genus ) ) ) %>%  # 按id和genus排序
+  group_by( id ) %>%  # 分组，让相同id的为一个柱子，每组单独计算位置
+  mutate( ypos = cumsum( abundance ) - abundance / 2 );  # 累加，再减去一半的高度使文字居中
+ggplot( speabu, aes( x = id, y = abundance, fill = genus ) ) + 
+  geom_bar( stat = "identity", position = "stack", color = "black", width = 0.8 ) +
+  geom_text( aes( y = ypos, label = paste( abundance, "%", sep = "" ) ), color = "white" );
+```
+![堆叠柱状图6](./md-image/堆叠柱状图6.png){:width=300 height=300}
+###### 并列柱状图
+即让每个柱子不堆叠，而是相邻排列
+![不堆叠的柱状图1](./md-image/不堆叠的柱状图1.png){:width=300 height=300}
+方法：为`geom_bar()`指定参数`position = "dodge"`或`position=position_dodge()`
+```
+ggplot( speabu, aes( x = id, y = abundance, fill = genus ) ) + 
+  geom_bar( stat = "identity", position = "dodge", color = "white", width = 0.8 );
+```
+
+---
+
+如何为并列的柱状图显示数值：使用`position_dodge`位置调整文本位置
+```
+# 准备数据
+df2 <- data.frame(supp=rep(c("VC", "OJ"), each=3),
+               dose=rep(c("D0.5", "D1", "D2"),2),
+              len=c(6.8, 15, 33, 4.2, 10, 29.5));
+```
+![不堆叠的柱状图2](./md-image/不堆叠的柱状图2.png){:width=150 height=150}
+```
+ggplot( df2, aes(x=factor(dose), y=len, fill=supp)) +
+  geom_bar(stat="identity", 
+           position=position_dodge())+
+  geom_text(aes(label=len), vjust=1.6, color="black", size=3.5,
+            position = position_dodge(0.9))
+```
+![不堆叠的柱状图3](./md-image/不堆叠的柱状图3.png){:width=150 height=150}
+通过修改`position_dodge`里面的参数，可以调整文字和柱子的位置
+
+---
+
+position的其它取值：
+- `position = position_identity()`：在指定位置，不改变
+- `position = position_jitter()`：随机往别的地方移动使点不重叠
+- `position = position_nudge()`：平移
+
+[更多关于position系列函数](https://blog.csdn.net/weixin_54000907/article/details/120108707)
+不同的画图函数有不同的默认position取值，比如柱形图是堆叠、箱型图是相邻
+```
+ggplot(ToothGrowth, aes(x=factor( dose ), y=len, fill=supp)) +
+  geom_boxplot();
+```
+![不堆叠的柱状图4](./md-image/不堆叠的柱状图4.png){:width=300 height=300}
+##### 主题
+一般分为两种调整主题的方式：
+- `theme(...)`自定义各个元素的样式
+- `theme_xxx()`直接使用已经定制好的内容，包括`theme_bw`、`theme_linedraw`、`theme_light`、`theme_dark`、`theme_minimal`、`theme_classic`、`theme_void`和默认主题`theme_gray`
+
+```
+ggplot(ToothGrowth, aes(x=factor( dose ), y=len, fill=supp)) +
+  geom_boxplot() + scale_fill_brewer( palette = "Paired" ) + theme_classic();
+```
+![主题1](./md-image/主题1.png){:width=300 height=300}
+
+---
+
+`theme()`函数：可用通式`theme(主题.部件=element_类型()/具体值)`表示
+- 主题：`plot`整幅图、`axis`坐标轴、`legend`图例、`panel`面板、`facet`子图
+- 部件：`title`名字，坐标轴名字、`line`线，坐标轴的xy轴, `text`标签，坐标轴刻度的数字、`ticks`坐标轴刻度的小线条、`background`背景、`position`位置、...
+- 类型：`rect`区域、`line`线条、`text`文本
+
+其中部件要和类型一致。如部件为title、text等文字相关的元素，那么类型处就应为text
+[更多关于theme函数的应用](https://blog.csdn.net/zty0104/article/details/119646934)
+
+---
+
+除了theme函数，还有一些函数用于设置图样式，如`labs`：
+```
+labs(
+  x = "<x label>",  # x轴标签
+  y = "<y label>",  # y轴标签
+  colour = "<legend title>",  # 与aes里的colour配合使用
+  fill = "<legend title>",  # 与aes里的fill配合使用
+  shape = "<legend title>",  # 与aes里的shape配合使用
+  ...,
+)
+```
+`colour/fill/shape`参数是为了给图例加标签，如果图在aes中按fill填充色进行区分并画图例，就使用`fill`参数给图例加标签
+```
+ggplot(ToothGrowth, aes(x=factor( dose ), y=len, fill=supp)) +
+  geom_boxplot() + 
+  scale_fill_brewer( palette = "Paired" ) + 
+  labs( fill = "图例", x = "Dose (mg)" ) + 
+  theme( legend.position = "top" );  # 调整图例位置为顶部
+```
+![主题2](./md-image/主题2.png){:width=300 height=300}
+`labs`还可以同时为多个图例指定名称：
+```
+# 创建基础图
+df <- ToothGrowth;
+df$dose <- as.factor(df$dose);
+sc <- ggplot(df, aes(x=dose, y=len, color=dose, shape=dose)) +
+  geom_jitter(position=position_jitter(0.2))+
+  theme(legend.position = "none") +
+  theme_gray();
+library("gridExtra");
+grid.arrange(
+  sc + labs(tag = "A"), 
+  sc + labs( colour = "Dose (mg)" , tag = "B"),
+  sc + labs( shape = "Dose (mg)" , tag = "C"),
+  sc + labs( colour = "Dose (mg)", shape = "Dose (mg)", tag = "D"  ),
+  ncol=4, nrow =1
+);
+```
+![主题3](./md-image/主题3.png){:width=300 height=300}
+### ggplot2实战
