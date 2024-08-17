@@ -26,6 +26,8 @@
       - [并列柱状图](#并列柱状图)
     - [主题](#主题)
 - [ggplot2实战](#ggplot2实战)
+    - [swiss](#swiss)
+    - [iris](#iris)
 
 <!-- /code_chunk_output -->
 
@@ -586,3 +588,28 @@ grid.arrange(
 ```
 ![主题3](./md-image/主题3.png){:width=300 height=300}
 ### ggplot2实战
+##### swiss
+每道题都有R基础作图函数和ggplot2两个版本
+**1.用直方图显示Catholic列的分布情况**
+基础作图函数：
+```
+hist(
+  x = swiss$Catholic,  # 数据
+  main = "Catholic",  # 标题
+  xlab = "Catholic"  # x轴标签
+);
+```
+![swiss1](./md-image/swiss1.png){:width=300 height=300}
+ggplot2：
+```
+ggplot(
+  swiss,  # 使用的数据集
+  aes( x = Catholic )  # 标明x轴的取自哪列
+  ) +
+  geom_histogram();  # 画直方图
+```
+![swiss2](./md-image/swiss2.png){:width=300 height=300}
+**2.用散点图显示Eduction与Fertility的关系**，同时将表示两者关系的线性公式、相关系数和p值画在图的空白处
+
+##### iris
+每道题都有R基础作图函数和ggplot2两个版本
