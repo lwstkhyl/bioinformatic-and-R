@@ -589,6 +589,7 @@ grid.arrange(
 ![主题3](./md-image/主题3.png){:width=300 height=300}
 ### ggplot2实战
 ##### swiss
+用`swiss`数据做图
 每道题都有R基础作图函数和ggplot2两个版本
 **1.用直方图显示Catholic列的分布情况**
 基础作图函数：
@@ -610,6 +611,68 @@ ggplot(
 ```
 ![swiss2](./md-image/swiss2.png){:width=300 height=300}
 **2.用散点图显示Eduction与Fertility的关系**，同时将表示两者关系的线性公式、相关系数和p值画在图的空白处
-
+因为要标注公式、相关系数和p值，所以首先要进行计算：
+```
+m <- lm(Fertility ~ Education,swiss);  # 线性回归
+cor_val <- cor(swiss$Fertility, swiss$Education);  # 相关系数
+p_val <- cor.test(swiss$Fertility,swiss$Education)$p.value;  # p值
+a <- coef(m)[1];  # 回归线y=ax+b中的a
+b <- coef(m)[2];  # 回归线y=ax+b中的b
+```
+基础作图函数：
+```
+with(swiss,plot(Education, Fertility, col = "blue"))  # 绘制基础散点图
+abline(  # 添加拟合曲线
+  lm(swiss$Fertility ~ swiss$Education),  # 回归线
+  col="red"  # 线颜色
+);
+legend(  # 将文字作为图例进行添加
+  "topright",  # 添加在右上角
+  legend = paste(  # 图例内容
+    "cor =", round(cor_val,2),  # 相关系数--保留2位小数
+    "\n",
+    "p =", format(p_val, scientific = T, digits = 2),  # p值--科学计数法，保留2位小数
+    "\n",
+    "y =",format(a ,digits = 2),"+",format(b ,digits = 2),"x",  # 公式，系数保留2位小数
+    "\n"
+  )
+);
+```
+![swiss3](./md-image/swiss3.png){:width=300 height=300}
+ggplot2：
+```
+ggplot(swiss, aes(x = Education, y = Fertility)) +
+  geom_point(color = "blue", size = 3) +  # 绘制基础散点图
+  geom_smooth(method = "lm", color = "red") +  # 添加拟合曲线
+  labs(title = "Education~Fertility", x = "Education", y = "Fertility") +  # 标题和xy轴
+  # 可以用之前讲过的as.expression(eq)方法添加，这里列举另一种添加方法
+  annotate(  # 将文字作为注释进行添加
+    "text",  # 声明注释的类型为文本
+    x = 20, y = 35,  # 添加注释的位置
+    label = paste(  # 注释内容--与基础作图函数中的相同
+      "cor =", round(cor_val,2),
+      "\n",
+      "p =", format(p_val, scientific = T, digits = 2),
+      "\n",
+      "y =",format(a ,digits = 2),"+",format(b ,digits = 2),"x"
+    )
+  );
+```
+![swiss4](./md-image/swiss4.png){:width=300 height=300}
 ##### iris
+用`iris`数据做图
 每道题都有R基础作图函数和ggplot2两个版本
+**1.用箱型图显示不同species的Sepal.Length的分布情况**
+即x轴为species，y轴为Sepal.Length
+基础作图函数：
+```
+boxplot(Sepal.Length ~ Species, data = iris);
+```
+![iris1](./md-image/iris1.png){:width=300 height=300}
+ggplot2：
+```
+ggplot(iris, aes(x = Species, y = Sepal.Length))+  # 指定数据集和xy轴
+  geom_boxplot();  # 画箱型图
+```
+![iris2](./md-image/iris2.png){:width=300 height=300}
+**2.用散点图显示Sepal.Length和Petal.Length之间的关系**，并根据species为点添加颜色，同时显示图例标明哪种颜色对应哪种species
