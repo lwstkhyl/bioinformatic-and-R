@@ -28,6 +28,7 @@
 - [ggplot2实战](#ggplot2实战)
     - [swiss](#swiss)
     - [iris](#iris)
+    - [箱型图](#箱型图)
 
 <!-- /code_chunk_output -->
 
@@ -676,3 +677,79 @@ ggplot(iris, aes(x = Species, y = Sepal.Length))+  # 指定数据集和xy轴
 ```
 ![iris2](./md-image/iris2.png){:width=300 height=300}
 **2.用散点图显示Sepal.Length和Petal.Length之间的关系**，并根据species为点添加颜色，同时显示图例标明哪种颜色对应哪种species
+基础作图函数：
+因为基础作图函数不能自动根据某列分组指定颜色，需要我们手动建立物种与颜色的对应，方法：给vector中的元素命名，使其成为一个类似于字典的数据结构
+```
+colors <- c(
+  "setosa" = "black",
+  "versicolor" = "red",
+  "virginica" = "green"
+);  # 物种与颜色的对应
+with(
+  iris,
+  plot(  # 散点图
+    Sepal.Length, Petal.Length,  # 数据
+    col = colors[Species],  # 按物种分配颜色
+    pch = 19,  # 设置颜色为填充色，而不是边缘颜色
+    xlab = "Sepal.Length",
+    ylab = "Petal.Length"  # 设置xy轴标题
+  )
+);
+legend(
+  "topleft",  # 设置图例位置
+  legend = levels(iris$Species),  # 设置图例中的标签来自iris$Species
+  col = colors,  # 按之前的对应设置颜色
+  pch = 19,  # 颜色为填充色
+  cex = 0.8,  # 调整图例大小
+  x.intersp = 0.3, 
+  y.intersp = 0.3,  # 图例每个标签的xy间距
+  text.width = 0.3  # 文本宽度
+);
+```
+![iris3](./md-image/iris3.png){:width=300 height=300}
+注：`colors[Species]`是在画图时按`colors`这个对应关系给物种标注颜色。如果只写`col=colors`，效果等效于`colors <- c("red","green","blue")`
+ggplot2：
+```
+ggplot(
+  iris,  # 数据
+  aes(
+    x = Sepal.Length,
+    y = Petal.Length,  # 指定xy轴数据
+    color = Species  # 按物种分颜色
+  ),
+  labs(x = Sepal.Length,y = Petal.Length)  # 设置xy轴标签
+) +
+  geom_point() +  # 画散点图
+  theme(legend.position = "top");  # 设置图例位置
+```
+![iris4](./md-image/iris4.png){:width=300 height=300}
+##### 箱型图
+使用ggplot2：显示`starwars`中身高`height`与性别`gender`的关系
+要求：
+- 去掉height为NA的数据
+- 用ggsignif包计算两种性别的身高是否有显著区别，并在图上显示
+- 将此图的结果保存为变量`p1`
+
+思路：使用`dplyr::filter`筛选行，条件为没有na的height和gender；之后使用`geom_boxplot`创建箱型图，并使用`geom_signif`函数进行分析
+```
+starwars_noNA <- starwars %>%  # 获取没有NA的数据
+  dplyr::filter(
+    is.na(height)==FALSE & is.na(gender)==FALSE
+  );
+base_boxplot <- 
+  ggplot(  # 传入数据
+    starwars_noNA,
+    aes(x = gender, y = height)
+  ) +
+  geom_boxplot() +  # 箱型图
+  labs(x = "gender", y = "height")  # xy轴标签
+library(ggsignif);
+p1 <- base_boxplot +
+  geom_signif(
+    comparisons = list(c("feminine", "masculine")),  # 设置需要比较的组
+    map_signif_level = T  # 将图像上方的p值以*代替
+  );
+p1;
+```
+![箱型图](./md-image/箱型图.png){:width=300 height=300}
+
