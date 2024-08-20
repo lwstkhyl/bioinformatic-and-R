@@ -29,6 +29,8 @@
     - [swiss](#swiss)
     - [iris](#iris)
     - [箱型图](#箱型图)
+    - [二维密度图](#二维密度图)
+    - [facet子图](#facet子图)
 
 <!-- /code_chunk_output -->
 
@@ -675,7 +677,7 @@ ggplot2：
 ggplot(iris, aes(x = Species, y = Sepal.Length))+  # 指定数据集和xy轴
   geom_boxplot();  # 画箱型图
 ```
-![iris2](./md-image/iris2.png){:width=300 height=300}
+![iris2](./md-image/iris2.png){:width=400 height=400}
 **2.用散点图显示Sepal.Length和Petal.Length之间的关系**，并根据species为点添加颜色，同时显示图例标明哪种颜色对应哪种species
 基础作图函数：
 因为基础作图函数不能自动根据某列分组指定颜色，需要我们手动建立物种与颜色的对应，方法：给vector中的元素命名，使其成为一个类似于字典的数据结构
@@ -706,7 +708,7 @@ legend(
   text.width = 0.3  # 文本宽度
 );
 ```
-![iris3](./md-image/iris3.png){:width=300 height=300}
+![iris3](./md-image/iris3.png){:width=400 height=400}
 注：`colors[Species]`是在画图时按`colors`这个对应关系给物种标注颜色。如果只写`col=colors`，效果等效于`colors <- c("red","green","blue")`
 ggplot2：
 ```
@@ -722,7 +724,7 @@ ggplot(
   geom_point() +  # 画散点图
   theme(legend.position = "top");  # 设置图例位置
 ```
-![iris4](./md-image/iris4.png){:width=300 height=300}
+![iris4](./md-image/iris4.png){:width=400 height=400}
 ##### 箱型图
 使用ggplot2：显示`starwars`中身高`height`与性别`gender`的关系
 要求：
@@ -742,7 +744,7 @@ base_boxplot <-
     aes(x = gender, y = height)
   ) +
   geom_boxplot() +  # 箱型图
-  labs(x = "gender", y = "height")  # xy轴标签
+  labs(x = "gender", y = "height");  # xy轴标签
 library(ggsignif);
 p1 <- base_boxplot +
   geom_signif(
@@ -751,5 +753,89 @@ p1 <- base_boxplot +
   );
 p1;
 ```
-![箱型图](./md-image/箱型图.png){:width=300 height=300}
+![箱型图](./md-image/箱型图.png){:width=400 height=400}
+##### 二维密度图
+使用ggplot2
+用二维密度图和散点图显示`iris`中`Sepal.Length`列和`Sepal.Width`之间的关系，同时按`Species`分组
+- 二维密度图：使用`geom_density2d`函数
+- 将此图的结果保存为变量`p2`
 
+```
+p2 <- ggplot(  # 传入数据
+  iris,
+  aes(
+    x = Sepal.Length,
+    y = Sepal.Width,  # xy轴数据
+    color = Species,  # 颜色按物种分组
+    shape = Species  # 点形状也按物种分组
+  )
+) +
+  geom_density2d() +  # 画二维密度图
+  geom_point() +  # 画散点图
+  labs(title = "IRIS");  # 添加标题
+p2;
+```
+![二维密度图](./md-image/二维密度图.png){:width=400 height=400}
+##### facet子图
+使用ggplot2
+**1.画散点图，显示`mtcars`中`wt`和`mpg`之间的关系，同时按`cyl`将数据分组画多个子图**
+![facet子图1](./md-image/facet子图1.png){:width=400 height=400}
+- 画出拟合曲线、图例、各图的名称
+- 图中的`468`组为所有数据合在一起的结果
+- 将此图的结果保存为变量`p3`
+
+思路：新建一个数据集`mtcars_new`，由`mtcars`和`mtcars_468`合并而来。`mtcars_new`就是把`mtcars`中的`cyl`列值全改成`468`，因为`facet_wrap`函数要按`cyl`分组，这样才能分为4、6、8、468四组，其中468组包含全部mtcars全部数据
+```
+rm(mtcars);  # 重置mtcars数据集
+mtcars_old <- mtcars;  # 保存原mtcars
+mtcars$cyl <- 468;  # 更改列值
+mtcars_468 <- mtcars;  # 保存新mtcars
+mtcars_new <- dplyr::bind_rows(mtcars_old, mtcars_468)#合并
+p3 <- ggplot(  # 传入数据
+  mtcars_new,
+  aes(
+    x = wt, y = mpg,
+    col = factor(cyl)  # 颜色按cyl分组
+  )
+) +
+  geom_point() +  # 画散点图
+  geom_smooth() +  # 添加拟合曲线
+  scale_color_manual(  # 手动设置颜色
+    breaks = c("4", "6", "8", "468"),
+    values = c("red", "green", "blue", "purple")
+    # breaks与values一一相对（cyl=4的颜色是red）
+  ) +
+  labs(x = "Weight",y = "MPG") +  # 添加xy轴标签
+  facet_wrap(  # 画子图
+    .~cyl,  # 按cyl分成多列
+    ncol = 2,  # 列数为2
+    scales = "free",  # 设置xy轴不统一
+    dir = "h"  # 按水平方向排布，即第一行是46第二行是8，若是v第一行就是48
+  );
+p3;
+```
+![facet子图2](./md-image/facet子图2.png){:width=500 height=500}
+**2.画点线图，显示`airquality`中`Wind`和`Temp`之间的关系，同时按`Month`将数据分组画多个子图**
+- 画出拟合曲线、图例、各图的名称
+- 子图按2行3列组织
+
+```
+ggplot(  # 传入数据
+  airquality,
+  aes(
+    x = Wind,y = Temp,
+    col = factor(Month)  # 按月份分组
+  )
+) +
+  geom_line() +  # 折线图
+  geom_point() +  # 散点图
+  geom_smooth() +  # 添加拟合曲线
+  labs(x = "Wind", y = "Temp") +  # 添加xy轴标签
+  facet_wrap(  # 画子图
+    .~Month,  # 按Month分成多列
+    ncol = 3,  # 列数为3
+    scales = "free",  # 设置xy轴不统一
+    dir = "h"  # 按水平方向排布
+  );
+```
+![facet子图3](./md-image/facet子图3.png){:width=500 height=500}
