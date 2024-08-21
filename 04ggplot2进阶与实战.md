@@ -34,6 +34,10 @@
     - [极坐标图(polar图)](#极坐标图polar图)
     - [多图组合](#多图组合)
       - [cowplot包](#cowplot包-1)
+      - [gridExtra包](#gridextra包-1)
+      - [拓展：patchwork包](#拓展patchwork包)
+    - [拓展：lattice包](#拓展lattice包)
+    - [与factor配合使用](#与factor配合使用)
 
 <!-- /code_chunk_output -->
 
@@ -981,3 +985,188 @@ p4;
 ```
 ##### 多图组合
 ###### cowplot包
+用`cowplot::ggdraw`将p1、p2和p3按下面的方式组合在一起
+![多图组合1](./md-image/多图组合1.png){:width=300 height=300}
+[cowplot包的具体使用](#cowplot包)
+关键：以**左下角**为原点，右、上为正方向，为每张图指定的坐标也是以左下角为准
+- A(p3)：(0, 0)，宽为0.5，高为1
+- B(p1)：(0.5, 0.5)，宽为0.5，高为0.5
+- C(p2)：(0.5, 0)，宽为0.5，高为0.5
+- 标签：ABC坐标分别为(0, 1)、(0.5, 1)、(0.5, 0.5)
+
+```
+library(cowplot);
+ggdraw() +  # 创建画板
+  draw_plot(p3, x = 0, y = 0, width = 0.5, height = 1) +
+  draw_plot(p1, 0.5, 0.5, 0.5, 0.5) +
+  draw_plot(p2, 0.5, 0, 0.5, 0.5) +
+  draw_plot_label(c("A", "B", "C"), c(0, 0.5, 0.5), c(1, 1, 0.5), size = 10);  # 标签
+```
+![多图组合2](./md-image/多图组合2.png){:width=400 height=400}
+###### gridExtra包
+用`gridExtra::grid.arrange`函数将p1、p2和p4按下面的方式组合在一起
+![多图组合3](./md-image/多图组合3.png){:width=300 height=300}
+要求为子图加上ABC标签
+[gridExtra包的具体使用](#gridextra包)
+可以看到分为两列，第一行为第一张图，第二行是剩下的两张图。构建的画图矩阵应为：
+```
+     [,1] [,2]
+[1,]    1    1
+[2,]    2    3
+```
+```
+library(gridExtra)
+grid.arrange(
+  p1+labs(tag = "A"),
+  p2+labs(tag = "B"),
+  p4+labs(tag = "C"),  # 先为每个图添标签，再组合在一起
+  nrow = 2,
+  layout_matrix = rbind(c(1,1),c(2,3))  # 画图矩阵
+);
+```
+![多图组合4](./md-image/多图组合4.png){:width=400 height=400}
+###### 拓展：patchwork包
+用patchwork包中的相关函数将p1、p2、p3和p4 按下面的方式组合在一起
+![多图组合5](./md-image/多图组合5.png){:width=400 height=400}
+要求为子图加上ABCD标签
+[patchwork包的使用](https://www.jianshu.com/p/73057774b4cb)
+对于此题重要使用两个操作符：
+- `p1 / p2`：将p1和p2竖直堆叠
+- `p1 | p2`：将p1和p2并列放置
+- 可以使用小括号来区分组合优先级
+
+```
+if (!require("patchwork")){ 
+  install.packages("patchwork");
+  library("patchwork");
+} 
+p1 <- p1+labs(tag = "A");
+p3 <- p3+labs(tag = "B");
+p4 <- p4+labs(tag = "C");
+p2 <- p2+labs(tag = "D");  # 先为每个图添标签，再组合在一起
+p1 / (p3 | p4) / p2;
+```
+![多图组合6](./md-image/多图组合6.png){:width=500 height=500}
+##### 拓展：lattice包
+[更多关于lattice包](https://www.jianshu.com/p/5885aaeda6c1)
+lattice包内置于R，无需额外安装
+它主要提供了绘制**网格图形**的方法。网格图形能够展示变量的分布或变量之间的关系，每幅图代表一个或多个变量的各个水平
+以**散点图矩阵**(Scatter Plot Matrix)为例：
+```
+library(lattice);
+lattice::splom( mtcars[c(1,3,4,5,6)] );
+```
+![lattice包](./md-image/lattice包.png){:width=400 height=400}
+它可以在一张图中展示所有列间的关系。例如左上角第一个格子，它的纵坐标对应着`wt`，横坐标对应着`mpg`
+##### 与factor配合使用
+任务：
+- 使用`readr`包中的函数读取`mouse_genes_biomart_sep2018.txt`
+- 选取常染色体（1~19）和性染色体（X、Y）的基因
+- 画各染色体上基因长度中值的箱型图，分别按
+  - **染色体序号**排列(1, 2, 3,..., X, Y)
+  - **基因长度的中值**排列（从短到长）
+
+要求：
+- 调整y轴范围，让每个箱子都完整显示
+- 调整y轴范围时，不能使用`ylim()`，因为该函数会去除超出范围的值，使中值计算有偏差
+
+解决方法：使用`coord_cartesian(ylim = c(min, max))`放大指定区域，这种方法只影响图形展示，不影响内部数据的值，而`ylim`函数会移除不在指定范围内的数据
+画图思路：使用`geom_boxplot`函数，x轴为染色体名称（先排序），y轴为基因长度。在上一篇笔记中说过，只要将x轴数据设为factor形式，画箱型图函数便会自动将数据分组统计
+**读取数据**：
+```
+mouse.genes <- read.delim( 
+  file = "data\\mouse_genes_biomart_sep2018.txt",
+  sep = "\t", header = T, stringsAsFactors = T 
+);
+mouse.genes %>% sample_n(5);
+```
+![与factor配合使用1](./md-image/与factor配合使用1.png){:width=150 height=150}
+其中`Transcript.length..including.UTRs.and.CDS.`列是基因长度，`Chromosome.scaffold.name`是基因位置（在哪条染色体上）
+**数据初处理**：筛选出在指定染色体的基因
+```
+chromosome <- c(as.character(1:19), "X", "Y");  # 需要哪些染色体的基因
+mouse.chr <- mouse.genes %>% 
+  filter(Chromosome.scaffold.name %in% chromosome);  # 筛选行
+head(mouse.chr);
+```
+![与factor配合使用2](./md-image/与factor配合使用2.png){:width=150 height=150}
+**第一个图**：按染色体序号排列
+方法：将`Chromosome.scaffold.name`列转为factor，levels为染色体序号顺序
+```
+# 转为factor
+x1 <- factor(mouse.chr$Chromosome.scaffold.name, levels = chromosome);
+# 画图
+ggplot(
+  mouse.chr,  # 设定画图所用的数据集
+  aes(  # 设定x,y轴对应的数据
+    x = x1,
+    y = Transcript.length..including.UTRs.and.CDS.
+  )
+) +
+  geom_boxplot() +  # 画箱型图
+  coord_cartesian(ylim = c(0,20000)) +  # 缩放y轴
+  labs(  # 设置xy轴名称和标题
+    y = "Transcript length (including UTRs and CDS)",
+    x = "Chromosome/scaffold name",
+    title = "按染色体序号排列"
+  );
+```
+![与factor配合使用3](./md-image/与factor配合使用3.png){:width=400 height=400}
+**第二个图**：按基因长度中值排序
+方法：使用`reorder(返回结果列, 顺序决定列, 排序方法)`函数指定factor顺序，该函数在[堆叠柱状图(stacked bars)](#堆叠柱状图stacked-bars)中说过，这里不再说明
+```
+# 转为factor
+x2 <- reorder(
+  mouse.chr$Chromosome.scaffold.name,  # 返回结果列
+  mouse.chr$Transcript.length..including.UTRs.and.CDS.,  # 顺序决定列
+  median  # 排序方法
+);
+# 画图
+ggplot(
+  mouse.chr,
+  aes(
+    x = x2,
+    y = Transcript.length..including.UTRs.and.CDS.
+  )
+) +  
+  geom_boxplot() +
+  coord_cartesian(ylim = c(0,20000)) +
+  labs(
+    y = "Transcript length (including UTRs and CDS)",
+    x = "Chromosome/scaffold name",
+    title = "按基因长度中值排列"
+  );
+```
+![与factor配合使用4](./md-image/与factor配合使用4.png){:width=400 height=400}
+
+---
+
+**代码汇总**：
+```
+mouse.genes <- read.delim( 
+  file = "..\\data\\talk04\\mouse_genes_biomart_sep2018.txt",
+  sep = "\t", header = T, stringsAsFactors = T );
+chromosome <- c(as.character(1:19), "X", "Y"); 
+mouse.chr <- mouse.genes %>% 
+  filter(Chromosome.scaffold.name %in% chromosome);
+# 按染色体序号排列↓
+x1 <- factor(mouse.chr$Chromosome.scaffold.name, levels = chromosome);
+ggplot(mouse.chr,
+       aes(x = x1,
+           y = Transcript.length..including.UTRs.and.CDS.)) +
+  labs(y = "Transcript length (including UTRs and CDS)",
+       x = "Chromosome/scaffold name",
+       title = "按染色体序号排列") +
+  geom_boxplot() +
+  coord_cartesian(ylim = c(0,20000));
+# 按中值排列↓
+x2 <- reorder(mouse.chr$Chromosome.scaffold.name, mouse.chr$Transcript.length..including.UTRs.and.CDS., median);
+ggplot(mouse.chr,
+       aes(x = x2,
+           y = Transcript.length..including.UTRs.and.CDS.)) +
+  labs(y = "Transcript length (including UTRs and CDS)",
+       x = "Chromosome/scaffold name",
+       title = "按基因长度中值排列") +
+  geom_boxplot() +
+  coord_cartesian(ylim = c(0,20000));
+```
