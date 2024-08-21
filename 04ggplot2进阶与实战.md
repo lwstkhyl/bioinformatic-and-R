@@ -31,6 +31,9 @@
     - [箱型图](#箱型图)
     - [二维密度图](#二维密度图)
     - [facet子图](#facet子图)
+    - [极坐标图(polar图)](#极坐标图polar图)
+    - [多图组合](#多图组合)
+      - [cowplot包](#cowplot包-1)
 
 <!-- /code_chunk_output -->
 
@@ -839,3 +842,142 @@ ggplot(  # 传入数据
   );
 ```
 ![facet子图3](./md-image/facet子图3.png){:width=500 height=500}
+##### 极坐标图(polar图)
+使用`mtcars`的`mpg`列
+- 先按`cyl`分组，由`cyl`确定每个柱子的颜色
+- 每个组内按`mpg`排序
+- 将此图的结果保存为变量`p4`
+
+![polar图1](./md-image/polar图1.png){:width=300 height=300}
+先看看我们要使用的数据：
+```
+rm(mtcars)  # 重置mtcars
+mtcars <- mtcars %>% select(cyl, mpg);
+```
+![polar图2](./md-image/polar图2.png){:width=300 height=300}
+可以看到行名是汽车名称，即结果图中的文字内容
+**数据初处理**：
+- 为了方便后续增添文本，将行名单独成一列，使用`rownames_to_column`函数
+- 分组并排序
+
+```
+data <- mtcars %>%
+  rownames_to_column() %>%
+  arrange(cyl,mpg);
+```
+![polar图3](./md-image/polar图3.png){:width=600 height=600}
+`arrange(cyl,mpg)`：以cyl为主序，mpg为次序进行排序。即先排cyl，再在其基础上排mpg。可以看成先按cyl分组，再在组内排序mpg
+注：不能写`group_by(cyl)`再`arrange(mpg)`，因为group_by是针对summary这类汇总函数的，这样排序后结果是只按mpg排的，不能体现分组
+```
+data <- mtcars %>%
+    group_by(cyl) %>%
+    arrange(mpg);
+```
+![polar图4](./md-image/polar图4.png){:width=600 height=600}
+**向量化索引列**：将rowname列（汽车名称）改成向量形式
+```
+data$rowname <- factor(
+  data$rowname,
+  levels = data$rowname
+);
+```
+这样做是为了固定每行的顺序，防止画图函数使用默认排序方法将顺序变乱。如果不加这一段代码：
+![polar图5](./md-image/polar图5.png){:width=300 height=300}
+**计算文本角度**：使用`angle = 90 - 360 * (id - 0.5) / n()`，其中id是行索引（是第几行）
+```
+data <- data %>%
+  mutate(
+    id = row_number(),  # 行索引
+    angle = 90-360*(id-0.5)/n()  # 文本角度
+  );
+```
+![polar图6](./md-image/polar图6.png){:width=300 height=300}
+**画图**：
+- 传入数据：xy轴分别是汽车名称和`mpg`，填充颜色fill为`cyl`
+- 使用`geom_bar`画基础柱状图，注意因为我们这里直接是按`cyl`的值确定柱子高度，所以要加上`stat = "identity"`
+- 使用`coord_polar`将x轴变为圆形，这是画任何polar图必须的一步
+- 添加文本，注意添加`aes(x=1:length(data$rowname)`为文本设置基础坐标
+- 其它微调
+  - `scale_y_continuous`修改y轴范围（即起始值和结束值），它们分别对应中间空白圆大小、柱子长短
+  - 不显示主网格线（平行xy轴的那些刻度线）
+  - 不显示刻度和xy轴刻度文本
+  - 不显示xy轴名称
+  - 去掉图背景的阴影（详见下面的函数）
+
+```
+p4 <- ggplot(  # 传入数据
+  data,
+  aes(
+    x = rowname,
+    y = mpg,
+    fill = factor(cyl)  # 指定填充颜色
+  )
+) +
+  geom_bar(stat = "identity") +  # 基础柱状图
+  coord_polar(theta = "x",start = 0) +  # 调整坐标轴
+  geom_text(  # 添加文本
+    aes(
+      x = 1:length(data$rowname),  # 基础坐标
+      label = data$rowname,  # 文本内容
+      angle = data$angle,  # 角度
+      hjust = -0.1  # 标签距中心距离 
+    )
+  ) +
+  scale_y_continuous(  # 修改y轴范围
+    expand = c(0.01, max(data$mpg)/3)
+  ) +
+  theme(  # 不显示主网格线
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank()
+  ) +
+  theme(  # 不显示刻度和xy轴刻度文本
+    axis.ticks = element_blank(),
+    axis.text.y = element_blank(),
+    axis.text.x = element_blank()
+  ) +
+  labs(x = "", y = "") +  # 不显示xy轴名称
+  theme(  # 去掉图背景的阴影
+    panel.background = element_rect(fill = "transparent",colour = NA),
+    plot.background = element_rect(fill = "transparent",colour = NA)
+  );
+p4;
+```
+![polar图8](./md-image/polar图8.png){:width=400 height=400}
+一个细节：传入数据时为什么要用`fill = factor(cyl)`？
+如果fill设置颜色时不加factor，使用`fill = cyl`：
+![polar图7](./md-image/polar图7.png){:width=300 height=300}
+这是因为画图函数将cyl看成了连续变量，而我们想让它作为离散变量，因此用factor处理
+
+---
+
+**代码汇总**：
+```
+rm(mtcars);
+data <- mtcars %>%
+  rownames_to_column() %>%
+  arrange(cyl,mpg);
+data$rowname <- factor(data$rowname, levels = data$rowname);
+data <- data %>%
+  mutate(id = row_number(),
+         angle = 90-360*(id-0.5)/n());
+p4 <- ggplot(data, aes(x = rowname, y = mpg,
+                       fill = factor(cyl))) +
+  geom_bar(stat = "identity") +
+  coord_polar(theta = "x",start = 0) +
+  geom_text(aes(x = 1:length(data$rowname),
+                label = data$rowname,
+                angle = data$angle,
+                hjust = -0.1)) +
+  scale_y_continuous(expand = c(0.01, max(data$mpg)/3)) +
+  theme(panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()) +
+  theme(axis.ticks = element_blank(),
+        axis.text.y = element_blank(),
+        axis.text.x = element_blank()) +
+  labs(x = "", y = "") +
+  theme(panel.background = element_rect(fill = "transparent",colour = NA),
+        plot.background = element_rect(fill = "transparent",colour = NA));
+p4;
+```
+##### 多图组合
+###### cowplot包
