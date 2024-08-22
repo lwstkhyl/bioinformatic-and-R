@@ -44,6 +44,8 @@
 <!-- 打开侧边预览：f1->Markdown Preview Enhanced: open...
 只有打开侧边预览时保存才自动更新目录 -->
 
+写在前面：本篇内容及例子（除标注了参考文章/具体案例的部分，以及一些比较零碎的小知识点）均来自[华中科技大学--组学数据分析与可视化课程--大二上](https://github.com/evolgeniusteam/R-for-bioinformatics) | [关于本课程的复习资料](https://github.com/Lucas04-nhr/Review-of-R) | [课程作业答案](https://github.com/Lucas04-nhr/R-for-Data-Science/tree/main/Exercises%20and%20homework) | [课程作业答案--中文注释版](https://github.com/lwstkhyl/r_class_homework)
+
 ### ggplot2进阶
 ##### 更多画子图的方式
 ###### cowplot包
