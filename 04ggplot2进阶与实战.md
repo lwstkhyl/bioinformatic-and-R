@@ -47,13 +47,13 @@
 ### ggplot2进阶
 ##### 更多画子图的方式
 ###### cowplot包
-```
+``` r
 if (!require("cowplot")){ 
   install.packages("cowplot");
   library("cowplot");
 } 
 ```
-```
+``` r
 cowplot::plot_grid(
     子图对象1, 子图对象2, ... , 
     labels=c(图1名称, 图2名称, ...), 
@@ -64,7 +64,7 @@ cowplot::plot_grid(
 )
 ```
 注意：`byrow`决定的是子图对象的位置，不决定`labels`的位置，`labels`都是向右延伸（第二个labels都在第一个labels的右面）
-```
+``` r
 sp <- ggplot(mpg, aes(x = cty, y = hwy, colour = factor(cyl)))+
   geom_point(size=2.5);
 bp <- ggplot(diamonds, aes(clarity, fill = cut)) +
@@ -79,7 +79,7 @@ cowplot::plot_grid(sp, bp, sp, labels = c("sp", "bp", "sp"), ncol = 2, nrow = 2,
 ---
 
 **指定每个图的大小和位置**：`draw_plot(plot, x = 0, y = 0, width = 1, height = 1)`其中xy以及宽高取值均为0-1间，表示占整个图的百分比，坐标以左下角为原点
-```
+``` r
 # 使用上面画的sp bp
 plot.iris <- ggplot(iris, aes(Sepal.Length, Sepal.Width)) + 
   geom_point() + 
@@ -96,24 +96,23 @@ plot.iris <- ggplot(iris, aes(Sepal.Length, Sepal.Width)) +
 ![cowplot包2](./md-image/cowplot包2.png){:width=400 height=400}
 **为每个子图设置标签**：`draw_plot_label(c(标签名), c(标签x轴位置), c(标签y轴位置))`
 还可以设置字体颜色color、字体尺寸size等
-```
+``` r
 plot +
   draw_plot_label(c("A", "B", "C"), c(0, 0, 0.5), c(1, 0.5, 0.5), size = 15);
 ```
 表示"A"在x=0 y=1的位置，"B"在x=0 y=0.5的位置，"C"在x=0.5 y=0.5的位置
 ![cowplot包3](./md-image/cowplot包3.png){:width=400 height=400}
 ###### gridExtra包
-```
+``` r
 if (!require("gridExtra")){ 
   install.packages("gridExtra");
   library("gridExtra");
 } 
 ```
 **先创建子图对象**：
-```
+``` r
 df <- ToothGrowth
 df$dose <- as.factor(df$dose)
-
 bp <- ggplot(df, aes(x=dose, y=len, color=dose)) +
   geom_boxplot() + 
   theme(legend.position = "none") + 
@@ -134,12 +133,12 @@ sc <- ggplot(df, aes(x=dose, y=len, color=dose, shape=dose)) +
   labs( tag = "D");
 ```
 `grid.arrange(子图对象1, 子图对象2, ... , ncol, nrow)`指定行列数：
-```
+``` r
 grid.arrange(bp, dp, vp, sc, ncol=2, nrow =2);
 ```
 ![gridExtra包1](./md-image/gridExtra包1.png){:width=400 height=400}
 使用`layout_matrix`参数：由一个矩阵确定绘图区域的每个格子都画哪些图：
-```
+``` r
 grid.arrange(bp, dp, vp, sc, ncol = 2, 
              layout_matrix = cbind(c(1,1,1), c(2,3,4)));
 ```
@@ -154,8 +153,9 @@ grid.arrange(bp, dp, vp, sc, ncol = 2,
 [2,]    1    3
 [3,]    1    4
 ```
+可以这样理解：将整个画板按n行m列的矩阵分成n行m列的格子，画板的每个格子与矩阵每个位置的值相对应——矩阵中为1的位置都画第一张图，为2的位置画第二张图，...
 **另一个例子**：
-```
+``` r
 grid.arrange(bp, dp, vp, sc, ncol = 3, 
              layout_matrix = cbind(c(1,1), c(2,2), c(3,4)));
 ```
@@ -166,7 +166,7 @@ grid.arrange(bp, dp, vp, sc, ncol = 3,
 **gridExtra包与图例**：
 实现效果：让两张图共享一个图例，图例显示在两张图的正上方
 思路：把图例画成一张图，使用`grid.arrange`让第一行是图例，第二行是两张图
-```
+``` r
 get_legend <- function(myggplot){
   tmp <- ggplot_gtable(ggplot_build(myggplot))
   leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
@@ -175,7 +175,7 @@ get_legend <- function(myggplot){
 }
 ```
 该函数接收一个图，返回这个图中的图例
-```
+``` r
 # 第一张子图（有图例）
 bp <- ggplot(df, aes(x=dose, y=len, color=dose)) +
   geom_boxplot() + 
@@ -193,7 +193,7 @@ legend <- get_legend(bp);
 bp2 <- bp + theme(legend.position="none");
 ```
 绘图：
-```
+``` r
 grid.arrange(legend, bp2, vp,  ncol=2, nrow = 2, 
              layout_matrix = rbind(c(1,1), c(2,3)),
              widths = c(2.7, 2.7), heights = c(0.2, 2.5));
@@ -209,27 +209,27 @@ grid.arrange(legend, bp2, vp,  ncol=2, nrow = 2,
 即第一行的两个格子全是第一张图的，第二行分别是第2/3张图
 ###### ggExtra包
 用于向已有图中添加边缘直方图(marginal histograms)，展示数据的分布状况
-```
+``` r
 if (!require("ggExtra")){ 
   install.packages("ggExtra");
   library("ggExtra");
 } 
 ```
 一个基本图：
-```
+``` r
 (piris <- ggplot(iris, aes(Sepal.Length, Sepal.Width, colour = Species)) +
   geom_point());
 ```
 ![ggExtra包1](./md-image/ggExtra包1.png){:width=300 height=300}
 添加边缘直方图：
-```
+``` r
 ggMarginal(piris, groupColour = TRUE, groupFill = TRUE);
 ```
 ![ggExtra包2](./md-image/ggExtra包2.png){:width=300 height=300}
 ##### 在图中写公式或统计信息
 ###### 如何写公式
 先看一个例子：
-```
+``` r
 m = lm(Fertility ~ Education, swiss);  # 回归拟合分析
 c = cor.test( swiss$Fertility, swiss$Education );  # 相关性分析
 eq <- substitute(  # 写公式
@@ -266,13 +266,13 @@ ggplot(swiss, aes( x = Education,  y = Fertility ) ) +  # 画图
   - `inherit.aes=F`不继承之前的aes设置
 
 **公式的写法1**：
-```
+``` r
 paste( italic(y), " = ",  a + b %.% italic(x), sep = "")
 paste( italic(r)^2, " = ", r2, ", ", italic(p)==pvalue, sep = "" )
 ```
 ![在图中写公式或统计信息2](./md-image/在图中写公式或统计信息2.png){:width=200 height=200}
 **公式的写法2**（不使用paste函数拼接）：
-```
+``` r
 italic(y) == a + b %.% italic(x)
 italic(r)^2~"="~r2*","~italic(p)==pvalue
 ```
@@ -289,7 +289,7 @@ italic(r)^2~"="~r2*","~italic(p)==pvalue
 
 这三个参数可被用于各种需要写文字的地方，如坐标轴标签、文本注释等等
 **例1**：
-```
+``` r
 df = data.frame(team=c('The Amazing Amazon Anteaters',
                        'The Rowdy Racing Raccoons',
                        'The Crazy Camping Cobras'),
@@ -299,8 +299,9 @@ ggplot(data=df, aes(x=team, y=points)) +
   theme(axis.text.x = element_text(angle=90)) ;
 ```
 ![在图中写公式或统计信息4](./md-image/在图中写公式或统计信息4.png){:width=400 height=400}
-使用hjust和vjust参数来调整x轴标签，使其与x轴上的刻度线更紧密地排列
-```
+这里使用了`angle=90`让x轴标签变为竖向，避免堆叠
+可以使用hjust和vjust参数来调整x轴标签，使其与x轴上的刻度线更紧密地排列：
+``` r
 ggplot(data=df, aes(x=team, y=points)) +
   geom_bar(stat='identity') +
   theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=1));
@@ -308,7 +309,7 @@ ggplot(data=df, aes(x=team, y=points)) +
 ![在图中写公式或统计信息5](./md-image/在图中写公式或统计信息5.png){:width=400 height=400}
 可以看到x轴标签向左/上移动了一些
 **例2**：
-```
+``` r
 df <- data.frame(player=c('Brad', 'Ty', 'Spencer', 'Luke', 'Max'),
                  points=c(17, 5, 12, 20, 22),
                  assists=c(4, 3, 7, 7, 5));
@@ -318,20 +319,20 @@ ggplot(df) +
 ```
 ![在图中写公式或统计信息6](./md-image/在图中写公式或统计信息6.png){:width=300 height=300}
 将文字向下移动使更容易阅读：
-```
+``` r
 ggplot(df) +
   geom_point(aes(x=points, y=assists)) + 
   geom_text(aes(x=points, y=assists, label=player), vjust=1.2);
 ```
 ![在图中写公式或统计信息7](./md-image/在图中写公式或统计信息7.png){:width=300 height=300}
 ###### 希腊字符
-`geom_text(aes(label="alpha"), parse=T)`
+使用`geom_text(aes(label="alpha"), parse=T)`
 希腊字符的英文写法：
 ![在图中写公式或统计信息9](./md-image/在图中写公式或统计信息9.png){:width=300 height=300}
 如何画出这个图？
 思路：先画出4x6个点，再对点添加文本
 准备数据：
-```
+``` r
 greeks <- c("Alpha", "Beta", "Gamma", "Delta", "Epsilon", "Zeta",
             "Eta", "Theta", "Iota", "Kappa", "Lambda", "Mu",
             "Nu", "Xi", "Omicron", "Pi", "Rho", "Sigma",
@@ -341,7 +342,7 @@ dat <- data.frame( x = rep( 1:6, 4 ), y = rep( 4:1, each = 6), greek = greeks );
 ![在图中写公式或统计信息10](./md-image/在图中写公式或统计信息10.png){:width=300 height=300}
 即每个文本对应的xy坐标
 绘图：
-```
+``` r
 plot2 <- 
   ggplot( dat, aes(x=x,y=y) ) + 
   geom_point(size = 0) +
@@ -351,7 +352,7 @@ plot2 <-
 注意两个`geom_text`的`label`都相同，但一个是写希腊符号，另一个是写普通英文，区别是`parse = T`参数，它控制是否要对字符串进行公式化转换
 ###### 更多公式写法
 **例1**：分数、根号、指数
-```
+``` r
 eq <- expression(
   paste(
     frac(1, sigma*sqrt(2*pi)), 
@@ -362,7 +363,7 @@ eq <- expression(
 ```
 ![更多公式写法1](./md-image/更多公式写法1.png){:width=150 height=150}
 **例2**：`bquote`函数
-```
+``` r
 x <- 1.24;
 y <- 0.6;
 ex <- bquote(
@@ -383,7 +384,7 @@ ex <- bquote(
 ```
 ![更多公式写法2](./md-image/更多公式写法2.png){:width=100 height=100}
 **例3**：`ggtitle()`指定标题不用写`parse = T`
-```
+``` r
 x_mean <- 1.5;
 x_sd <- 1.2;
 ex <- substitute(
@@ -401,7 +402,7 @@ ggplot( data.frame( x = rnorm(100, x_mean, x_sd) ), aes( x ) ) +
 ![更多公式写法3](./md-image/更多公式写法3.png){:width=300 height=300}
 ##### 先计算再做图--画图函数的计算方法
 先看一个例子：
-```
+``` r
 # 准备数据
 grades2 <- read_delim( file = "data/grades2.txt", delim = "\t",
                        quote = "", col_names = T);
@@ -409,7 +410,7 @@ knitr::kable( grades2 );
 ```
 ![默认计算方法1](./md-image/默认计算方法1.png){:width=200 height=200}
 现在要画出每位学生及格的课程数，使用filter筛选行即可
-```
+``` r
 ggplot( grades2 %>% dplyr::filter( grade >= 60 ), 
         aes( name ) ) +
   geom_bar();
@@ -418,7 +419,7 @@ ggplot( grades2 %>% dplyr::filter( grade >= 60 ),
 仔细观察上面的函数，我们只是筛选了行并给出了x轴取值，并没有分组和计算行数，但`geom_bar()`仍给出了正确的结果
 这是因为`geom_bar()`中有一个默认的参数`stat = "count"`，它表示画图函数对数据的统计方法，柱状图默认是按x轴的数据分组并计算行数
 以上函数实际相当于：
-```
+``` r
 # 先做统计
 cnt <- grades2 %>% 
   group_by( name ) %>% 
@@ -439,14 +440,14 @@ ggplot( cnt, aes( x = name, y = cnt ) ) +
 ![堆叠柱状图1](./md-image/堆叠柱状图1.png){:width=300 height=300}
 方法：为`geom_bar()`指定参数`position = "stack"`
 例：
-```
+``` r
 # 准备数据
 speabu <-read_tsv( file = "data/mock_species_abundance.txt"  );
 head( speabu );
 ```
 ![堆叠柱状图2](./md-image/堆叠柱状图2.png){:width=150 height=150}
 相同id的画一个柱子，柱子堆叠的每部分颜色不同（根据genus列来取），柱子高度由abundance列决定
-```
+``` r
 ggplot( speabu, aes( x = id, y = abundance, fill = genus ) ) + 
   geom_bar( stat = "identity", position = "stack", color = "black", width = 0.2 );
 ```
@@ -457,7 +458,7 @@ ggplot( speabu, aes( x = id, y = abundance, fill = genus ) ) +
 
 **需求1：指定Genus展示顺序**
 思路：使用factor对Genus列进行重排
-```
+``` r
 speabu$genus <- factor( speabu$genus, 
                         levels = rev( c( "Enterobacteriaceae", "Lachnospiraceae", "Bacteroidaceae", "Lactobacillaceae", "Clostridiaceae", 
                         "Ruminococcaceae", "Prevotellaceae", "Erysipelotrichaceae", "Streptococcaceae", "Enterococcaceae", "Other" ) ) );
@@ -470,7 +471,7 @@ ggplot( speabu, aes( x = id, y = abundance, fill = genus ) ) +
 
 需求2：按丰度中值大小排序
 使用reorder函数：`reorder(返回结果列, 顺序决定列, 排序方法)`
-```
+``` r
 speabu$genus <- reorder( speabu$genus, speabu$abundance, median );
 ggplot( speabu, aes( x = id, y = abundance, fill = genus ) ) + 
   geom_bar( stat = "identity", position = "stack", color = "white", width = 0.8 );
@@ -481,7 +482,7 @@ ggplot( speabu, aes( x = id, y = abundance, fill = genus ) ) +
 
 **需求3：显示数值**
 即每个堆叠部分的占比（abundance值）
-```
+``` r
 # 先计算显示位置
 speabu <- speabu %>% 
   arrange( id, desc( factor( genus ) ) ) %>%  # 按id和genus排序
@@ -496,7 +497,7 @@ ggplot( speabu, aes( x = id, y = abundance, fill = genus ) ) +
 即让每个柱子不堆叠，而是相邻排列
 ![不堆叠的柱状图1](./md-image/不堆叠的柱状图1.png){:width=300 height=300}
 方法：为`geom_bar()`指定参数`position = "dodge"`或`position=position_dodge()`
-```
+``` r
 ggplot( speabu, aes( x = id, y = abundance, fill = genus ) ) + 
   geom_bar( stat = "identity", position = "dodge", color = "white", width = 0.8 );
 ```
@@ -504,14 +505,14 @@ ggplot( speabu, aes( x = id, y = abundance, fill = genus ) ) +
 ---
 
 如何为并列的柱状图显示数值：使用`position_dodge`位置调整文本位置
-```
+``` r
 # 准备数据
 df2 <- data.frame(supp=rep(c("VC", "OJ"), each=3),
                dose=rep(c("D0.5", "D1", "D2"),2),
               len=c(6.8, 15, 33, 4.2, 10, 29.5));
 ```
 ![不堆叠的柱状图2](./md-image/不堆叠的柱状图2.png){:width=150 height=150}
-```
+``` r
 ggplot( df2, aes(x=factor(dose), y=len, fill=supp)) +
   geom_bar(stat="identity", 
            position=position_dodge())+
@@ -530,7 +531,7 @@ position的其它取值：
 
 [更多关于position系列函数](https://blog.csdn.net/weixin_54000907/article/details/120108707)
 不同的画图函数有不同的默认position取值，比如柱形图是堆叠、箱型图是相邻
-```
+``` r
 ggplot(ToothGrowth, aes(x=factor( dose ), y=len, fill=supp)) +
   geom_boxplot();
 ```
@@ -538,9 +539,9 @@ ggplot(ToothGrowth, aes(x=factor( dose ), y=len, fill=supp)) +
 ##### 主题
 一般分为两种调整主题的方式：
 - `theme(...)`自定义各个元素的样式
-- `theme_xxx()`直接使用已经定制好的内容，包括`theme_bw`、`theme_linedraw`、`theme_light`、`theme_dark`、`theme_minimal`、`theme_classic`、`theme_void`和默认主题`theme_gray`
+- `theme_xxx()`直接使用已经定制好的内容，包括`theme_bw`、`theme_linedraw`、`theme_light`、`theme_dark`、`theme_minimal`、`theme_classic`、`theme_void`和默认主题`theme_gray`等
 
-```
+``` r
 ggplot(ToothGrowth, aes(x=factor( dose ), y=len, fill=supp)) +
   geom_boxplot() + scale_fill_brewer( palette = "Paired" ) + theme_classic();
 ```
@@ -559,10 +560,11 @@ ggplot(ToothGrowth, aes(x=factor( dose ), y=len, fill=supp)) +
 ---
 
 除了theme函数，还有一些函数用于设置图样式，如`labs`：
-```
+``` r
 labs(
   x = "<x label>",  # x轴标签
   y = "<y label>",  # y轴标签
+  tag = "图标签",  # 常用于为每个子图添加对应标签
   colour = "<legend title>",  # 与aes里的colour配合使用
   fill = "<legend title>",  # 与aes里的fill配合使用
   shape = "<legend title>",  # 与aes里的shape配合使用
@@ -570,7 +572,7 @@ labs(
 )
 ```
 `colour/fill/shape`参数是为了给图例加标签，如果图在aes中按fill填充色进行区分并画图例，就使用`fill`参数给图例加标签
-```
+``` r
 ggplot(ToothGrowth, aes(x=factor( dose ), y=len, fill=supp)) +
   geom_boxplot() + 
   scale_fill_brewer( palette = "Paired" ) + 
@@ -579,7 +581,7 @@ ggplot(ToothGrowth, aes(x=factor( dose ), y=len, fill=supp)) +
 ```
 ![主题2](./md-image/主题2.png){:width=300 height=300}
 `labs`还可以同时为多个图例指定名称：
-```
+``` r
 # 创建基础图
 df <- ToothGrowth;
 df$dose <- as.factor(df$dose);
@@ -589,10 +591,10 @@ sc <- ggplot(df, aes(x=dose, y=len, color=dose, shape=dose)) +
   theme_gray();
 library("gridExtra");
 grid.arrange(
-  sc + labs(tag = "A"), 
-  sc + labs( colour = "Dose (mg)" , tag = "B"),
-  sc + labs( shape = "Dose (mg)" , tag = "C"),
-  sc + labs( colour = "Dose (mg)", shape = "Dose (mg)", tag = "D"  ),
+  sc + labs( tag = "A" ), 
+  sc + labs( colour = "Dose (mg)" , tag = "B" ),
+  sc + labs( shape = "Dose (mg)" , tag = "C" ),
+  sc + labs( colour = "Dose (mg)", shape = "Dose (mg)", tag = "D" ),
   ncol=4, nrow =1
 );
 ```
@@ -603,7 +605,7 @@ grid.arrange(
 每道题都有R基础作图函数和ggplot2两个版本
 **1.用直方图显示Catholic列的分布情况**
 基础作图函数：
-```
+``` r
 hist(
   x = swiss$Catholic,  # 数据
   main = "Catholic",  # 标题
@@ -612,7 +614,7 @@ hist(
 ```
 ![swiss1](./md-image/swiss1.png){:width=300 height=300}
 ggplot2：
-```
+``` r
 ggplot(
   swiss,  # 使用的数据集
   aes( x = Catholic )  # 标明x轴的取自哪列
@@ -622,7 +624,7 @@ ggplot(
 ![swiss2](./md-image/swiss2.png){:width=300 height=300}
 **2.用散点图显示Eduction与Fertility的关系**，同时将表示两者关系的线性公式、相关系数和p值画在图的空白处
 因为要标注公式、相关系数和p值，所以首先要进行计算：
-```
+``` r
 m <- lm(Fertility ~ Education,swiss);  # 线性回归
 cor_val <- cor(swiss$Fertility, swiss$Education);  # 相关系数
 p_val <- cor.test(swiss$Fertility,swiss$Education)$p.value;  # p值
@@ -630,7 +632,7 @@ a <- coef(m)[1];  # 回归线y=ax+b中的a
 b <- coef(m)[2];  # 回归线y=ax+b中的b
 ```
 基础作图函数：
-```
+``` r
 with(swiss,plot(Education, Fertility, col = "blue"))  # 绘制基础散点图
 abline(  # 添加拟合曲线
   lm(swiss$Fertility ~ swiss$Education),  # 回归线
@@ -650,7 +652,7 @@ legend(  # 将文字作为图例进行添加
 ```
 ![swiss3](./md-image/swiss3.png){:width=300 height=300}
 ggplot2：
-```
+``` r
 ggplot(swiss, aes(x = Education, y = Fertility)) +
   geom_point(color = "blue", size = 3) +  # 绘制基础散点图
   geom_smooth(method = "lm", color = "red") +  # 添加拟合曲线
@@ -675,12 +677,12 @@ ggplot(swiss, aes(x = Education, y = Fertility)) +
 **1.用箱型图显示不同species的Sepal.Length的分布情况**
 即x轴为species，y轴为Sepal.Length
 基础作图函数：
-```
+``` r
 boxplot(Sepal.Length ~ Species, data = iris);
 ```
 ![iris1](./md-image/iris1.png){:width=300 height=300}
 ggplot2：
-```
+``` r
 ggplot(iris, aes(x = Species, y = Sepal.Length))+  # 指定数据集和xy轴
   geom_boxplot();  # 画箱型图
 ```
@@ -688,7 +690,7 @@ ggplot(iris, aes(x = Species, y = Sepal.Length))+  # 指定数据集和xy轴
 **2.用散点图显示Sepal.Length和Petal.Length之间的关系**，并根据species为点添加颜色，同时显示图例标明哪种颜色对应哪种species
 基础作图函数：
 因为基础作图函数不能自动根据某列分组指定颜色，需要我们手动建立物种与颜色的对应，方法：给vector中的元素命名，使其成为一个类似于字典的数据结构
-```
+``` r
 colors <- c(
   "setosa" = "black",
   "versicolor" = "red",
@@ -716,9 +718,9 @@ legend(
 );
 ```
 ![iris3](./md-image/iris3.png){:width=400 height=400}
-注：`colors[Species]`是在画图时按`colors`这个对应关系给物种标注颜色。如果只写`col=colors`，效果等效于`colors <- c("red","green","blue")`
+注：`colors[Species]`是在画图时按`colors`这个对应关系给物种标注颜色。如果只写`col=colors`，效果等效于`colors <- c("red","green","blue")`（每个点循环使用这3个颜色）
 ggplot2：
-```
+``` r
 ggplot(
   iris,  # 数据
   aes(
@@ -740,7 +742,7 @@ ggplot(
 - 将此图的结果保存为变量`p1`
 
 思路：使用`dplyr::filter`筛选行，条件为没有na的height和gender；之后使用`geom_boxplot`创建箱型图，并使用`geom_signif`函数进行分析
-```
+``` r
 starwars_noNA <- starwars %>%  # 获取没有NA的数据
   dplyr::filter(
     is.na(height)==FALSE & is.na(gender)==FALSE
@@ -767,7 +769,7 @@ p1;
 - 二维密度图：使用`geom_density2d`函数
 - 将此图的结果保存为变量`p2`
 
-```
+``` r
 p2 <- ggplot(  # 传入数据
   iris,
   aes(
@@ -792,7 +794,7 @@ p2;
 - 将此图的结果保存为变量`p3`
 
 思路：新建一个数据集`mtcars_new`，由`mtcars`和`mtcars_468`合并而来。`mtcars_new`就是把`mtcars`中的`cyl`列值全改成`468`，因为`facet_wrap`函数要按`cyl`分组，这样才能分为4、6、8、468四组，其中468组包含全部mtcars全部数据
-```
+``` r
 rm(mtcars);  # 重置mtcars数据集
 mtcars_old <- mtcars;  # 保存原mtcars
 mtcars$cyl <- 468;  # 更改列值
@@ -826,7 +828,7 @@ p3;
 - 画出拟合曲线、图例、各图的名称
 - 子图按2行3列组织
 
-```
+``` r
 ggplot(  # 传入数据
   airquality,
   aes(
@@ -854,7 +856,7 @@ ggplot(  # 传入数据
 
 ![polar图1](./md-image/polar图1.png){:width=300 height=300}
 先看看我们要使用的数据：
-```
+``` r
 rm(mtcars)  # 重置mtcars
 mtcars <- mtcars %>% select(cyl, mpg);
 ```
@@ -864,7 +866,7 @@ mtcars <- mtcars %>% select(cyl, mpg);
 - 为了方便后续增添文本，将行名单独成一列，使用`rownames_to_column`函数
 - 分组并排序
 
-```
+``` r
 data <- mtcars %>%
   rownames_to_column() %>%
   arrange(cyl,mpg);
@@ -872,14 +874,14 @@ data <- mtcars %>%
 ![polar图3](./md-image/polar图3.png){:width=600 height=600}
 `arrange(cyl,mpg)`：以cyl为主序，mpg为次序进行排序。即先排cyl，再在其基础上排mpg。可以看成先按cyl分组，再在组内排序mpg
 注：不能写`group_by(cyl)`再`arrange(mpg)`，因为group_by是针对summary这类汇总函数的，这样排序后结果是只按mpg排的，不能体现分组
-```
+``` r
 data <- mtcars %>%
     group_by(cyl) %>%
     arrange(mpg);
 ```
 ![polar图4](./md-image/polar图4.png){:width=600 height=600}
 **向量化索引列**：将rowname列（汽车名称）改成向量形式
-```
+``` r
 data$rowname <- factor(
   data$rowname,
   levels = data$rowname
@@ -888,7 +890,7 @@ data$rowname <- factor(
 这样做是为了固定每行的顺序，防止画图函数使用默认排序方法将顺序变乱。如果不加这一段代码：
 ![polar图5](./md-image/polar图5.png){:width=300 height=300}
 **计算文本角度**：使用`angle = 90 - 360 * (id - 0.5) / n()`，其中id是行索引（是第几行）
-```
+``` r
 data <- data %>%
   mutate(
     id = row_number(),  # 行索引
@@ -908,7 +910,7 @@ data <- data %>%
   - 不显示xy轴名称
   - 去掉图背景的阴影（详见下面的函数）
 
-```
+``` r
 p4 <- ggplot(  # 传入数据
   data,
   aes(
@@ -955,7 +957,7 @@ p4;
 ---
 
 **代码汇总**：
-```
+``` r
 rm(mtcars);
 data <- mtcars %>%
   rownames_to_column() %>%
@@ -994,7 +996,7 @@ p4;
 - C(p2)：(0.5, 0)，宽为0.5，高为0.5
 - 标签：ABC坐标分别为(0, 1)、(0.5, 1)、(0.5, 0.5)
 
-```
+``` r
 library(cowplot);
 ggdraw() +  # 创建画板
   draw_plot(p3, x = 0, y = 0, width = 0.5, height = 1) +
@@ -1014,7 +1016,7 @@ ggdraw() +  # 创建画板
 [1,]    1    1
 [2,]    2    3
 ```
-```
+``` r
 library(gridExtra)
 grid.arrange(
   p1+labs(tag = "A"),
@@ -1035,7 +1037,7 @@ grid.arrange(
 - `p1 | p2`：将p1和p2并列放置
 - 可以使用小括号来区分组合优先级
 
-```
+``` r
 if (!require("patchwork")){ 
   install.packages("patchwork");
   library("patchwork");
@@ -1052,7 +1054,7 @@ p1 / (p3 | p4) / p2;
 lattice包内置于R，无需额外安装
 它主要提供了绘制**网格图形**的方法。网格图形能够展示变量的分布或变量之间的关系，每幅图代表一个或多个变量的各个水平
 以**散点图矩阵**(Scatter Plot Matrix)为例：
-```
+``` r
 library(lattice);
 lattice::splom( mtcars[c(1,3,4,5,6)] );
 ```
@@ -1073,7 +1075,7 @@ lattice::splom( mtcars[c(1,3,4,5,6)] );
 解决方法：使用`coord_cartesian(ylim = c(min, max))`放大指定区域，这种方法只影响图形展示，不影响内部数据的值，而`ylim`函数会移除不在指定范围内的数据
 画图思路：使用`geom_boxplot`函数，x轴为染色体名称（先排序），y轴为基因长度。在上一篇笔记中说过，只要将x轴数据设为factor形式，画箱型图函数便会自动将数据分组统计
 **读取数据**：
-```
+``` r
 mouse.genes <- read.delim( 
   file = "data\\mouse_genes_biomart_sep2018.txt",
   sep = "\t", header = T, stringsAsFactors = T 
@@ -1083,7 +1085,7 @@ mouse.genes %>% sample_n(5);
 ![与factor配合使用1](./md-image/与factor配合使用1.png){:width=150 height=150}
 其中`Transcript.length..including.UTRs.and.CDS.`列是基因长度，`Chromosome.scaffold.name`是基因位置（在哪条染色体上）
 **数据初处理**：筛选出在指定染色体的基因
-```
+``` r
 chromosome <- c(as.character(1:19), "X", "Y");  # 需要哪些染色体的基因
 mouse.chr <- mouse.genes %>% 
   filter(Chromosome.scaffold.name %in% chromosome);  # 筛选行
@@ -1092,7 +1094,7 @@ head(mouse.chr);
 ![与factor配合使用2](./md-image/与factor配合使用2.png){:width=150 height=150}
 **第一个图**：按染色体序号排列
 方法：将`Chromosome.scaffold.name`列转为factor，levels为染色体序号顺序
-```
+``` r
 # 转为factor
 x1 <- factor(mouse.chr$Chromosome.scaffold.name, levels = chromosome);
 # 画图
@@ -1114,7 +1116,7 @@ ggplot(
 ![与factor配合使用3](./md-image/与factor配合使用3.png){:width=400 height=400}
 **第二个图**：按基因长度中值排序
 方法：使用`reorder(返回结果列, 顺序决定列, 排序方法)`函数指定factor顺序，该函数在[堆叠柱状图(stacked bars)](#堆叠柱状图stacked-bars)中说过，这里不再说明
-```
+``` r
 # 转为factor
 x2 <- reorder(
   mouse.chr$Chromosome.scaffold.name,  # 返回结果列
@@ -1142,9 +1144,9 @@ ggplot(
 ---
 
 **代码汇总**：
-```
+``` r
 mouse.genes <- read.delim( 
-  file = "..\\data\\talk04\\mouse_genes_biomart_sep2018.txt",
+  file = "..\\data\\mouse_genes_biomart_sep2018.txt",
   sep = "\t", header = T, stringsAsFactors = T );
 chromosome <- c(as.character(1:19), "X", "Y"); 
 mouse.chr <- mouse.genes %>% 
