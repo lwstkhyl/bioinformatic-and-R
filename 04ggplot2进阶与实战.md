@@ -17,11 +17,11 @@
       - [ggExtra包](#ggextra包)
     - [在图中写公式或统计信息](#在图中写公式或统计信息)
       - [如何写公式](#如何写公式)
-      - [调整公式位置--hjust/vjust/angle](#调整公式位置-hjustvjustangle)
+      - [调整公式位置--hjust/vjust/angle](#调整公式位置--hjustvjustangle)
       - [希腊字符](#希腊字符)
       - [更多公式写法](#更多公式写法)
-    - [先计算再做图--画图函数的计算方法](#先计算再做图-画图函数的计算方法)
-    - [position参数--以柱形图为例](#position参数-以柱形图为例)
+    - [先计算再做图--画图函数的计算方法](#先计算再做图--画图函数的计算方法)
+    - [position参数--以柱形图为例](#position参数--以柱形图为例)
       - [堆叠柱状图(stacked bars)](#堆叠柱状图stacked-bars)
       - [并列柱状图](#并列柱状图)
     - [主题](#主题)
@@ -471,7 +471,7 @@ ggplot( speabu, aes( x = id, y = abundance, fill = genus ) ) +
 
 ---
 
-需求2：按丰度中值大小排序
+**需求2：按丰度中值大小排序**
 使用reorder函数：`reorder(返回结果列, 顺序决定列, 排序方法)`
 ``` r
 speabu$genus <- reorder( speabu$genus, speabu$abundance, median );
