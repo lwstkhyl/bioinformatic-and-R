@@ -2,6 +2,6 @@
 
 **b站生信课01**（已完结）来自b站课程[生信从0到1学习系列](https://www.bilibili.com/video/BV1ra4y117f3) [课程资料](https://pan.baidu.com/s/1N0z1ckQzRTj62yzogtBocg?pwd=tjzg) 提取码：tjzg
 
-**b站生信课02**来自b站课程[【生信纯干货】 生信分析手把手教学](https://www.bilibili.com/video/BV1aS4y1S7MK)
+**b站生信课02**（正在更新）来自b站课程[TCGA及GEO数据挖掘入门必看/R语言实战/生信分析/数据分析/转录组/生物信息学](https://www.bilibili.com/video/BV1b34y1g7RM)
 
-**b站生信课03**（正在更新）来自b站课程[TCGA及GEO数据挖掘入门必看/R语言实战/生信分析/数据分析/转录组/生物信息学](https://www.bilibili.com/video/BV1b34y1g7RM)
+**b站生信课03**来自b站课程[【生信纯干货】 生信分析手把手教学](https://www.bilibili.com/video/BV1aS4y1S7MK)
