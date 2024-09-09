@@ -24,6 +24,8 @@
 - [基因集富集分析GSEA](#基因集富集分析gsea)
 - [ssGSEA和GSVA](#ssgsea和gsva)
 - [样本配对的差异表达分析](#样本配对的差异表达分析)
+- [LASSO回归](#lasso回归)
+- [多因素cox回归](#多因素cox回归)
 
 <!-- /code_chunk_output -->
 
@@ -543,7 +545,7 @@ cli <- cli[cli$time>=30, ];  # 只保留生存时间>=30的行
 cli <- cli[!is.na(cli$time), ];
 cli <- cli[!is.na(cli$state), ];  # 过滤掉NA
 cli$time <- cli$time/365;  # 时间以年为单位
-cli$state <- ifelse(cli$state=='Alive', 1, 0);  # 存活用1表示，死亡用0表示
+cli$state <- ifelse(cli$state=='Alive', 0, 1);  # 死亡用1表示，存活用0表示
 library("writexl");
 write_xlsx(data.frame(ID = rownames(cli), cli), "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\time_LUSC.xlsx");
 ```
@@ -713,7 +715,7 @@ cli <- cli[cli$time>=30, ];
 cli <- cli[!is.na(cli$time), ];
 cli <- cli[!is.na(cli$state), ];
 cli$time <- cli$time/365;
-cli$state <- ifelse(cli$state=='Alive', 1, 0);
+cli$state <- ifelse(cli$state=='Alive', 0, 1);
 same_sample <- intersect(rownames(tpm), rownames(cli));
 tpm <- tpm[same_sample, ];
 cli <- cli[same_sample, ];
@@ -1380,8 +1382,8 @@ data <- data[same_sample, ];
 cli <- cli[same_sample, ];  # 过滤
 rt <- cbind(cli, data);  # 合并
 ```
-![LASSO回归1](./md-image/LASSO回归1.png){:width=250 height=250}
-![LASSO回归2](./md-image/LASSO回归2.png){:width=250 height=250}
+![LASSO回归1](./md-image/LASSO回归1.png){:width=200 height=200}
+![LASSO回归2](./md-image/LASSO回归2.png){:width=170 height=170}
 **构建lasso回归模型**：
 - 使用`set.seed`设置随机种子，使K折交叉验证结果固定
 - `glmnet`函数的`family`参数取值：、
@@ -1406,7 +1408,7 @@ plot(cvfit);
 abline(v = log(c(cvfit$lambda.min, cvfit$lambda.1se)), lty = "dashed");
 dev.off();
 ```
-![LASSO回归5](./md-image/LASSO回归5.png){:width=250 height=250}
+![LASSO回归5](./md-image/LASSO回归5.png){:width=400 height=400}
 ```{r}
 # deviance（偏似然偏差）
 cvfit <- cv.glmnet(x, y, family = "cox", type.measure = "deviance", nfolds = 10);
@@ -1415,7 +1417,7 @@ plot(cvfit);
 abline(v = log(c(cvfit$lambda.min, cvfit$lambda.1se)), lty = "dashed");
 dev.off();
 ```
-![LASSO回归6](./md-image/LASSO回归6.png){:width=250 height=250}
+![LASSO回归6](./md-image/LASSO回归6.png){:width=400 height=400}
 ```{r}
 # coefficients（回归系数路径图）
 pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\lasso.lambda.pdf");
@@ -1423,7 +1425,7 @@ plot(fit, xvar = "lambda", label = T);
 abline(v = log(cvfit$lambda.min), lty = "dashed");
 dev.off();
 ```
-![LASSO回归7](./md-image/LASSO回归7.png){:width=250 height=250}
+![LASSO回归7](./md-image/LASSO回归7.png){:width=400 height=400}
 **lasso回归结果**：
 ```{r}
 coef <- coef(fit, s = cvfit$lambda.min);
@@ -1442,10 +1444,10 @@ lasso_sig_exp_save <- cbind(
 write.table(lasso_sig_exp_save, file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\lasso.SigExp.txt", row.names = F, sep = '\t', quote = F);
 ```
 `lasso_res`（lasso回归基因名及对应系数）：
-![LASSO回归4](./md-image/LASSO回归4.png){:width=250 height=250}
+![LASSO回归4](./md-image/LASSO回归4.png){:width=200 height=200}
 可以看到共有33个基因被筛选出来
 `lasso_sig_exp_save`（lasso回归基因在各样本的表达量及生存信息）：
-![LASSO回归3](./md-image/LASSO回归3.png){:width=250 height=250}
+![LASSO回归3](./md-image/LASSO回归3.png){:width=200 height=200}
 ### 多因素cox回归
 以生存状态和生存时间为因变量，同时分析多因素对生存期的影响。可分析带有截尾生存时间（生存时间的截止不是由于死亡，而是其它原因引起）的资料，且不要求估计资料的生存分布类型
 使用数据：上面得到的lasso回归基因在各样本的表达量及生存信息
@@ -1473,7 +1475,7 @@ outTab <- cbind(id = row.names(outTab), outTab);
 outTab <- gsub("`", "", outTab);
 write.table(outTab, file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\multiCox.txt", row.names = F, sep = '\t', quote = F);
 ```
-![多因素cox回归1](./md-image/多因素cox回归1.png){:width=250 height=250}
+![多因素cox回归1](./md-image/多因素cox回归1.png){:width=150 height=150}
 共筛选出21个基因
 **计算病人风险值**：
 ```{r}
@@ -1494,7 +1496,7 @@ risk_res <- cbind(
 risk_res_save <- cbind(id = row.names(risk_res), risk_res);
 write.table(risk_res_save, file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\risk.txt", row.names = F, sep = '\t', quote = F);
 ```
-![多因素cox回归2](./md-image/多因素cox回归2.png){:width=250 height=250}
+![多因素cox回归2](./md-image/多因素cox回归2.png){:width=200 height=200}
 **绘图（同单因素cox回归）**：
 ```{r}
 rt <- read.table( "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\multiCox.txt", check.names = F, row.names = 1, sep = '\t', header = T);
@@ -1529,4 +1531,4 @@ points(as.numeric(hr), n:1, pch = 15, col = boxcolor, cex = 1.6);
 axis(1);
 dev.off();
 ```
-![多因素cox回归3](./md-image/多因素cox回归3.png){:width=250 height=250}
+![多因素cox回归3](./md-image/多因素cox回归3.png){:width=400 height=400}
