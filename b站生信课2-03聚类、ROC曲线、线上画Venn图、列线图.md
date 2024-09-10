@@ -12,6 +12,8 @@
 
 - [一致性聚类与无监督聚类](#一致性聚类与无监督聚类)
 - [ROC曲线](#roc曲线)
+- [Venn图绘制](#venn图绘制)
+- [列线图](#列线图)
 
 <!-- /code_chunk_output -->
 
@@ -23,7 +25,7 @@
 ### 一致性聚类与无监督聚类
 需要数据：多因素cox回归结果（其实也可以是lasso/单因素cox回归结果）、tpm表达矩阵
 需要包：`ConsensusClusterPlus`
-```{r}
+``` r
 if(!require("ConsensusClusterPlus", quietly = T))
 {
   library("BiocManager");
@@ -32,7 +34,7 @@ if(!require("ConsensusClusterPlus", quietly = T))
 }
 ```
 **读取数据**：选出肿瘤组的样本，取出筛选后基因的在各样本中的表达量
-```{r}
+``` r
 # tpm表达矩阵
 data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA_LUSC_TPM.txt", check.names = F, row.names = 1, sep = '\t', header = T);
 dimnames <- list(rownames(data), colnames(data));
@@ -56,7 +58,7 @@ data <- data[rownames(multi_cox_gene), ];
 - `title`输出结果的文件夹名字，包含输出的图片等
 - `seed`随机种子，用于固定结果
 - `plot`输出图片的格式
-```{r}
+``` r
 res <- ConsensusClusterPlus(
   data,
   maxK = 9,
@@ -91,7 +93,7 @@ res <- ConsensusClusterPlus(
 
 综合上面的分析，我们选取k=2的结果
 **根据上面的分组，对样本进行分型**：
-```{r}
+``` r
 clu_num <- 2;  # 分成几组（k值）
 clu <- res[[clu_num]][["consensusClass"]];  # 聚类结果（分组信息）
 clu <- as.data.frame(clu);
@@ -113,7 +115,7 @@ AUC指曲线下的面积
 - AUC=0.5：等同于随机猜测，没有预测价值
 - AUC<0.5：比随机猜测差。但如果是反向猜测，该模型也可能优于随机猜测
 
-```{r}
+``` r
 if(!require("pROC", quietly = T))
 {
   library("BiocManager");
@@ -132,7 +134,7 @@ if(!require("timeROC", quietly = T))
 }
 ```
 **读取并处理生存信息，与风险得分合并**：
-```{r}
+``` r
 # 读取生存信息
 library("readxl");
 library(tidyverse);
@@ -183,9 +185,9 @@ rt <- cbind(
 library(writexl);
 write_xlsx(cbind(ID = row.names(cli), cli[, c("time", "state", "Age", "Gender", "T", "N", "M", "Stage", "subdivision")]), "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\new_clinical.xlsx");
 ```
-![ROC曲线2](./md-image/ROC曲线2.png){:width=250 height=250}
+![ROC曲线2](./md-image/ROC曲线2.png){:width=180 height=180}
 **ROC分析并绘图**：
-```{r}
+``` r
 # 可以是state/是否为肿瘤组~基因表达量/风险得分
 roc1 <- roc(rt$state ~ rt$riskScore);  
 pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\ROC.riskscore.pdf", width = 5, height = 5);
@@ -198,7 +200,7 @@ plot(
 );
 dev.off();
 ```
-![ROC曲线3](./md-image/ROC曲线3.png){:width=250 height=250}
+![ROC曲线3](./md-image/ROC曲线3.png){:width=300 height=300}
 另一种ROC分析--**`timeROC`时间依赖型生存曲线**：
 - `T`事件时间
 - `delta`事件状态（删失数据值为0）
@@ -210,7 +212,7 @@ dev.off();
 - `ROC`是否保存sensitivities的specificties值（默认为T）
 - `iid`是否保存置信区间（默认为F，样本量大时很耗时间）
 
-```{r}
+``` r
 roc_rt <- timeROC(
   T = risk$time,
   delta = risk$state,
@@ -236,9 +238,9 @@ legend(
 );
 dev.off();
 ```
-![ROC曲线4](./md-image/ROC曲线4.png){:width=250 height=250}
+![ROC曲线4](./md-image/ROC曲线4.png){:width=300 height=300}
 **其它临床特征的ROC曲线**：
-```{r}
+``` r
 pre_time <- 5;  # 预测年限
 # 先使用风险得分作roc预测
 roc_rt <- timeROC(
@@ -273,5 +275,127 @@ for (i in 4:ncol(rt)) {
 legend("bottomright", auc_text, lwd = 4, bty = 'n', title = "All set", col = bioCol[1:(ncol(rt)-1)]);
 dev.off();
 ```
-![ROC曲线5](./md-image/ROC曲线5.png){:width=250 height=250}
+![ROC曲线5](./md-image/ROC曲线5.png){:width=300 height=300}
 可以看到使用风险得分进行roc预测的准确度明显大于其它临床特征
+### Venn图绘制
+除了使用代码绘制，还可以使用[在线网站](https://bioinfogp.cnb.csic.es/tools/venny/index.html)
+将4种差异表达分析结果基因输入，并调整相关设置
+![Venn图绘制](./md-image/Venn图绘制.png){:width=400 height=400}
+之后右键图片->`将图像另存为`
+除此之外，点击图片中的各区域，左下角results就可列出这部分交叉的基因
+![Venn图绘制2](./md-image/Venn图绘制2.png){:width=350 height=350}
+### 列线图
+使用`regplot`包的版本为0.2，[下载](https://cran.r-project.org/src/contrib/Archive/regplot/regplot_0.2.tar.gz)
+``` r
+library(survival);
+if(!require("regplot", quietly = T))
+{
+  install.packages("regplot");
+  library("regplot");
+}
+library(rms);
+```
+**读取风险得分和临床数据，合并**：
+``` r
+# 风险得分
+risk <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\risk.txt", check.names = F, row.names = 1, sep = '\t', header = T);
+# 临床数据
+library("readxl");
+library(tibble);
+cli <- read_excel("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\new_clinical.xlsx");
+cli <- column_to_rownames(cli, "ID");
+# 删除包含NA的行
+cli <- cli[apply(cli, 1, function(x)any(is.na(match(NA, x)))),  ];
+# 合并
+same_sample <- intersect(rownames(risk), rownames(cli));  # 共同样本名
+risk <- risk[same_sample, ];
+cli <- cli[same_sample, ];  # 过滤
+rt <- cbind(risk[, c("time", "state", "risk")], cli[, c("Age", "Gender", "T", "N", "M", "Stage", "subdivision")]);  # 合并
+```
+![列线图2](./md-image/列线图2.png){:width=150 height=150}
+**画列线图**：
+``` r
+# 因为我们这里有生存时间和生存状态，所以用cox
+# 如果只是用来预测二分类（如正常/肿瘤），就用logistic回归
+res.cox <- coxph(Surv(time, state) ~ ., data = rt);
+pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\nomogram.pdf", width = 10, height = 11);
+# 画图
+nom1 <- regplot(
+  res.cox,
+  title = "",
+  points = T,
+  droplines = T,
+  observation = rt[50, ],
+  failtime = c(1, 3, 5),
+  prfail = F
+);
+dev.off();
+```
+![列线图3](./md-image/列线图3.png){:width=700 height=700}
+更高版本的`regplot`包画出的列线图：
+![列线图1](./md-image/列线图1.png){:width=600 height=600}
+图左侧标明了画图过程中使用的变量，图右侧的points区域是每个变量相应能获得多少分，根据所有变量分数之和可以获得总体的打分`Total Points`，这个总体打分可以预测每个样本存活1/3/5年的概率
+**列线图打分**：
+``` r
+nomo_risk <- predict(res.cox, data = rt, type = "risk");
+rt <- cbind(Nomogram = nomo_risk, risk);
+outTab <- rbind(ID = colnames(rt), rt);
+write.table(outTab, file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\nomoRisk.txt", sep = '\t', row.names = F, quote = F);
+```
+![列线图4](./md-image/列线图4.png){:width=150 height=150}
+**校准曲线**：
+``` r
+pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\calibration.pdf", width = 6, height = 6);
+# 1年
+f <- cph(Surv(time, state) ~ Nomogram, x = T, y = T, surv = T, data = rt, time.inc = 1);
+cal <- calibrate(f, cmethod = 'KM', method = "boot", u = 1, m = (nrow(rt)/3), B = 1000);
+plot(
+  cal, 
+  xlim = c(0, 1), 
+  ylim = c(0, 1), 
+  xlab = "Nomogram-predicted OS (%)", 
+  ylab = "Observed OS (%)",
+  lwd = 3,
+  col = "Firebrick2",
+  sub = F
+);
+# 3年
+f <- cph(Surv(time, state) ~ Nomogram, x = T, y = T, surv = T, data = rt, time.inc = 3);
+cal <- calibrate(f, cmethod = 'KM', method = "boot", u = 3, m = (nrow(rt)/3), B = 1000);
+plot(
+  cal, 
+  xlim = c(0, 1), 
+  ylim = c(0, 1), 
+  xlab = "Nomogram-predicted OS (%)", 
+  ylab = "Observed OS (%)",
+  lwd = 3,
+  col = "MediumSeaGreen",
+  sub = F,
+  add = T
+);
+# 5年
+f <- cph(Surv(time, state) ~ Nomogram, x = T, y = T, surv = T, data = rt, time.inc = 5);
+cal <- calibrate(f, cmethod = 'KM', method = "boot", u = 5, m = (nrow(rt)/3), B = 1000);
+plot(
+  cal, 
+  xlim = c(0, 1), 
+  ylim = c(0, 1), 
+  xlab = "Nomogram-predicted OS (%)", 
+  ylab = "Observed OS (%)",
+  lwd = 3,
+  col = "NavyBlue",
+  sub = F,
+  add = T
+);
+# 图例
+legend(
+  "bottomright",
+  c("1-year", "3-year", "5-year"),
+  col = c("Firebrick2", "MediumSeaGreen", "NavyBlue"),
+  lwd = 3,
+  bty = 'n'
+);
+dev.off();
+```
+![列线图5](./md-image/列线图5.png){:width=400 height=400}
+横坐标是这个列线图预测的总体生存率，纵坐标是实际生存率。当预测==实际（即曲线趋近对角线）时，预测效果较好
