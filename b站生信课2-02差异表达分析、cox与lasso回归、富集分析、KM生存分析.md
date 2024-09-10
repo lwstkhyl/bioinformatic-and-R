@@ -38,7 +38,7 @@
 一般情况下，如果使用的表达矩阵是TPM值，就用wilcoxon；如果是count值，就用DESeq2等方法
 ##### TPM值
 使用包：`limma`、`pheatmap`、`ggVolcano`
-```{r}
+``` r
 if(!require("pheatmap", quietly = T))
 {
   install.packages("pheatmap");
@@ -57,7 +57,7 @@ if(!require("ggVolcano", quietly = T))
 library("tidyverse");
 ```
 **读取文件并转化为matrix**，方法同前
-```{r}
+``` r
 data <- read.table(
   "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA_LUSC_TPM.txt",
   header = T,
@@ -77,7 +77,7 @@ data <- data[rowMeans(data)>1, ];
 ```
 ![差异表达分析1](./md-image/差异表达分析1.png){:width=250 height=250}
 将data分成肿瘤组和正常组，方法同生信课01，将列名按`-`切分，第4个值如果是01-09就是癌症，10-19是正常，20-29是癌旁（也算正常组）。因此我们只需取出`01-09`的`0`，`10-19`的`1`
-```{r}
+``` r
 # group：标识每个样本是正常还是癌症
 group <- sapply(strsplit(colnames(data), '\\-'), "[", 4);  # 取出第4个值，以数组形式返回
 # 等效于group <- sapply(strsplit(colnames(data), '\\-'), function(x){x[4]});
@@ -104,7 +104,7 @@ type <- c(rep(1, con_num), rep(2, treat_num));
 - 根据p值，使用`p.adjust`函数获取fdr值，即修正后的p值
 - 设定logFC和fdr的阈值，筛选出差异基因
 
-```{r}
+``` r
 # 对每行（每个基因）进行分析
 outTab <- data.frame();  # 结果矩阵
 for (i in row.names(data)) {
@@ -167,7 +167,7 @@ write.table(
 - 每个基因在各样本中的表达量（行名是基因名，列名是样本名），表达量+0.01后取log2
 - 一个用于标识每个样本属于哪组的vector
 
-```{r}
+``` r
 gene_num <- 50;  # 展示基因的数目
 outDiff <- outDiff[order(as.numeric(as.vector(outDiff$logFC))),];  # 按logFC排序
 diff_gene <- as.vector(outDiff[, 1]);  # 差异基因名称
@@ -204,7 +204,7 @@ dev.off();  # 关闭文件
 左面的树状线是基因聚类，右面（纵轴）是基因名称，横轴为样本名称，每个点的颜色表示表达量大小
 **火山图**：
 横坐标是`logFC`，纵坐标是`-log10(fdr)`，先画出所有的点，之后以x=±`logFC_filter`为分界线，左半部分点为绿色，右半部分点为红色
-```{r}
+``` r
 x_max <- 6;
 y_max <- max(-log10(outTab$fdr))+1;  # xy轴极值
 pdf(  # 创建画图文件
@@ -253,7 +253,7 @@ dev.off();
 ##### count值
 ###### limma
 需要包：`limma`、`pheatmap`、`edgeR`
-```{r}
+``` r
 if(!require("edgeR", quietly = T))
 {
   library("BiocManager");
@@ -265,7 +265,7 @@ library("limma");
 library("tidyverse");
 ```
 读取文件并分组：
-```{r}
+``` r
 data <- read.table(
   "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA_LUSC_count.txt",
   header = T,
@@ -295,7 +295,7 @@ design <- model.matrix(~0+type);
 rownames(design) <- colnames(data);
 ```
 进行差异分析：
-```{r}
+``` r
 DGElist <- DGEList(counts=data, group=type);
 keep_gene_index <- rowSums(cpm(DGElist)>1) >= 2; 
 DGElist <- DGElist[keep_gene_index, , keep.lib.sizes=F];
@@ -310,7 +310,7 @@ nrDEG_limma_voom <- topTable(fit2, coef = 'tumor-normal', n = Inf);
 nrDEG_limma_voom <- na.omit(nrDEG_limma_voom);
 ```
 筛选：
-```{r}
+``` r
 padj <- 0.05;
 logFC <- 1;
 outDiff <- nrDEG_limma_voom[nrDEG_limma_voom$adj.P.Val<padj, ];
@@ -333,14 +333,14 @@ write.table(
 之后用`outDiff`画图的过程同前，下同
 ###### edgeR
 需要包：`limma`、`pheatmap`、`edgeR`
-```{r}
+``` r
 library("edgeR");
 library("pheatmap");
 library("limma");
 library("tidyverse");
 ```
 读取文件并分组：
-```{r}
+``` r
 data <- read.table(
   "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA_LUSC_count.txt",
   header = T,
@@ -370,7 +370,7 @@ design <- model.matrix(~0+type);
 rownames(design) <- colnames(data);
 ```
 差异分析：
-```{r}
+``` r
 DGElist <- DGEList(counts=data, group=type);
 keep_gene_index <- rowSums(cpm(DGElist)>1) >= 2; 
 DGElist <- DGElist[keep_gene_index, , keep.lib.sizes=F];
@@ -384,7 +384,7 @@ nrDEG_edgeR <- topTags(results, n = nrow(DGElist));
 nrDEG_edgeR <- as.data.frame(nrDEG_edgeR);
 ```
 筛选（同前）：
-```{r}
+``` r
 padj <- 0.05;
 logFC <- 1;
 outDiff <- nrDEG_edgeR[nrDEG_edgeR$FDR<padj, ];
@@ -407,7 +407,7 @@ write.table(
 ###### DESeq2
 需要包：`DESeq2`
 与生信课01中的类似，只是这里没有分成训练组和验证组
-```{r}
+``` r
 if(!require("DESeq2", quietly = T))
 {
   library("BiocManager");
@@ -416,7 +416,7 @@ if(!require("DESeq2", quietly = T))
 }
 ```
 读取数据并分组：
-```{r}
+``` r
 data <- read.table(
   "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA_LUSC_count.txt",
   header = T,
@@ -445,7 +445,7 @@ condition <- factor(type);
 coldata <- data.frame(row.names = colnames(data), condition);
 ```
 差异分析：
-```{r}
+``` r
 dds <- DESeqDataSetFromMatrix(
   countData = data,
   colData = coldata,
@@ -456,7 +456,7 @@ dds <- DESeq(dds);
 allDEG2 <- as.data.frame(results(dds));
 ```
 筛选（同前）：
-```{r}
+``` r
 padj <- 0.05;
 logFC <- 1;
 outDiff <- allDEG2[allDEG2$padj<padj, ];
@@ -478,7 +478,7 @@ write.table(
 ![差异表达分析8](./md-image/差异表达分析8.png){:width=180 height=180}
 ##### 查看以上4种分析结果
 使用包：`VennDiagram`
-```{r}
+``` r
 if(!require("VennDiagram", quietly = T))
 {
   install.packages("VennDiagram");
@@ -486,7 +486,7 @@ if(!require("VennDiagram", quietly = T))
 }
 ```
 载入4组数据，获取4种方法得到差异基因名
-```{r}
+``` r
 data_name <- c("edgeR", "limma", "DESeq2", "Wilcoxon");
 file_path <- c("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA.diff.edgeR.txt", "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA.diff.limma.txt", "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA.diff.DESeq2.txt", "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA.diff.Wilcoxon.txt");
 data_list <- list();  # 结果列表
@@ -496,7 +496,7 @@ for (i in 1:length(file_path)) {
 }
 ```
 画图：
-```{r}
+``` r
 venn.diagram(
   x = data_list,
   filename = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\VN.png",
@@ -506,7 +506,7 @@ venn.diagram(
 ![差异表达分析9](./md-image/差异表达分析9.png){:width=350 height=350}
 ### 单因素cox回归
 使用包`survival`、`survminer`
-```{r}
+``` r
 if(!require("survival", quietly = T))
 {
   install.packages("survival");
@@ -523,7 +523,7 @@ if(!require("survminer", quietly = T))
 - 差异基因`TCGA.diff.limma.txt`
 - 生存状况`clinical.xlsx`
 
-```{r}
+``` r
 # 表达矩阵
 tpm <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA_LUSC_TPM.txt", check.names = F, row.names = 1, sep = '\t', header = T);
 dimnames <- list(rownames(tpm), colnames(tpm));
@@ -553,7 +553,7 @@ write_xlsx(data.frame(ID = rownames(cli), cli), "C:\\Users\\WangTianHao\\Documen
 ![单因素cox回归1](./md-image/单因素cox回归1.png){:width=180 height=180}
 ![单因素cox回归2](./md-image/单因素cox回归2.png){:width=180 height=180}
 **将生存信息与表达矩阵进行合并**，提取共含的样本
-```{r}
+``` r
 same_sample <- intersect(rownames(tpm), rownames(cli));  # 共同样本名
 tpm <- tpm[same_sample, ];
 cli <- cli[same_sample, ];  # 过滤
@@ -561,7 +561,7 @@ rt <- cbind(cli, tpm);  # 合并
 ```
 ![单因素cox回归3](./md-image/单因素cox回归3.png){:width=180 height=180}
 **cox回归**：
-```{r}
+``` r
 p.value <- 0.01;  # p值的阈值
 outTab <- data.frame();  # 结果矩阵
 for (i in colnames(rt[, 3:ncol(rt)])) {  # i是基因名
@@ -590,7 +590,7 @@ write.table(
 ```
 ![单因素cox回归4](./md-image/单因素cox回归4.png){:width=150 height=150}
 **画图的数据准备**：基因名、HR、p值
-```{r}
+``` r
 rt <- read.table( "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\uniCox.txt", check.names = F, row.names = 1, sep = '\t', header = T);
 show_num <- 20;  # 展示基因的数量
 rt <- rt[sample(1:nrow(rt), show_num, replace = F), ];  # 为方便展示，这里只画出前20个基因
@@ -606,7 +606,7 @@ pVal <- ifelse(
 );
 ```
 **画图**：使用`layout`函数进行多图布局，接收一个矩阵，表示每个格子对应的图，比设置`par`更方便，[更多关于layout函数](https://blog.csdn.net/qq_40794743/article/details/107897265)
-```{r}
+``` r
 n <- nrow(rt);
 nRow <- n+1;
 ylim <- c(1, nRow);  # y轴上下限
@@ -618,7 +618,7 @@ layout_matrix：
 [1,]    1    2
 ```
 表示左右分别有一个图，左边是文字，右边是图主体
-```{r}
+``` r
 pdf(
   file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\uniCoxforest.pdf",
   width = 7,
@@ -685,7 +685,7 @@ dev.off();
 ---
 
 **代码汇总**：
-```
+``` r
 rm(list=ls());
 if(!require("survival", quietly = T))
 {
@@ -766,7 +766,7 @@ dev.off();
 ```
 ### GO富集分析
 需要包：`ggtree`、`clusterProfiler`、`org.Hs.eg.db`、`enrichplot`、`GOplot`、`R.utils`
-```{r}
+``` r
 if(!require("ggtree", quietly = T))
 {
   library("BiocManager");
@@ -804,19 +804,19 @@ library("enrichplot");
 R.utils::setOption("clusterProfiler.download.method", "auto");
 ```
 **准备数据**：单因素cox回归得到的基因symbol
-```{r}
+``` r
 input_diff <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\uniCox.txt", check.names = F, row.names = 1, sep = '\t', header = T);
 input_gene <- rownames(input_diff);  # 取基因symbol
 input_gene <- unique(as.vector(input_gene));  # 去重
 ```
 **将基因symbol转为基因id**：因为这些都是人的基因，使用`org.Hs.eg.db`库中的数据库`org.Hs.egSYMBOL2EG`进行转化，[其它物种](https://www.jianshu.com/p/84e70566a6c6)
-```{r}
+``` r
 entrezIDs <- BiocGenerics::mget(input_gene, org.Hs.egSYMBOL2EG, ifnotfound = NA);
 entrezIDs <- as.character(entrezIDs);
 gene <- entrezIDs[entrezIDs!='NA'];  # 去除NA值
 ```
 **GO富集分析**：
-```{r}
+``` r
 # 筛选条件：如果想要结果较多就使用pvalue进行筛选，反之用qvalue
 pvalue_filter <- 0.05;
 qvalue_filter <- 1;
@@ -838,7 +838,7 @@ write.table(GO, file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinfo
 ```
 ![GO富集分析8](./md-image/GO富集分析8.png){:width=200 height=200}
 **画图**：
-```{r}
+``` r
 show_num <- 10;  # 只画前10个
 # 柱状图
 pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\GObarplot.pdf", width = 10, height = 7);
@@ -868,7 +868,7 @@ dev.off();
 ![GO富集分析1](./md-image/GO富集分析1.png){:width=400 height=400}
 ![GO富集分析2](./md-image/GO富集分析2.png){:width=400 height=400}
 **其它`clusterProfiler`包自带的作图方法**：
-```{r}
+``` r
 barplot(kk) + ggtitle("富集柱形图");
 dotplot(kk) + ggtitle("富集气泡图");
 cnetplot(kk) + ggtitle("网络图1");  # 网络图1：展示富集功能与基因的包含关系
@@ -880,7 +880,7 @@ heatplot(kk) + ggtitle("热图");  # 热图：展示富集功能与基因的包�
 ![GO富集分析7](./md-image/GO富集分析7.png){:width=400 height=400}
 ### KEGG富集分析
 准备数据与GO富集分析相同
-```{r}
+``` r
 library("clusterProfiler");
 library("org.Hs.eg.db");
 input_diff <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\uniCox.txt", check.names = F, row.names = 1, sep = '\t', header = T);
@@ -891,7 +891,7 @@ entrezIDs <- as.character(entrezIDs);
 gene <- entrezIDs[entrezIDs!='NA'];
 ```
 KEGG富集分析：
-```{r}
+``` r
 # 筛选条件：如果想要结果较多就使用pvalue进行筛选
 pvalue_filter <- 0.05;
 qvalue_filter <- 1;
@@ -921,7 +921,7 @@ write.table(KEGG, file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioin
 ```
 ![KEGG富集分析1](./md-image/KEGG富集分析1.png){:width=200 height=200}
 画图：
-```{r}
+``` r
 showNum <- 20;  # 显示通路的数目
 # 柱状图
 pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\KEGGbarplot.pdf", width = 9, height = 7);
@@ -950,7 +950,7 @@ dev.off();
 cox回归是分析某个基因的**表达量**与生存状态时间的关系，而KM生存分析是基于**不同的分组**来分析生存状态时间
 分组方法：根据某个基因表达量的中位值，分成两组——高表达组和低表达组
 需要包：`survival`、`survminer`、`gridtext`
-```{r}
+``` r
 if(!require("gridtext", quietly = T))
 {
   install.packages("gridtext");
@@ -962,7 +962,7 @@ library("tidyverse");
 library("readxl");
 ```
 **读取数据**：表达矩阵和生存信息，提取共同样本后合并（同单因素cox回归）
-```{r}
+``` r
 cli <- read_excel("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\time_LUSC.xlsx");
 cli <- column_to_rownames(cli, "ID");
 data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA_LUSC_TPM.txt", check.names = F, row.names = 1, sep = '\t', header = T);
@@ -978,7 +978,7 @@ rt <- cbind(cli, data);  # 合并
 ```
 ![Kaplan–Meier生存分析1](./md-image/Kaplan–Meier生存分析1.png){:width=200 height=200}
 **分组**：这里以ABCA3基因为例
-```{r}
+``` r
 mid <- quantile(rt[, "ABCA3"], seq(0, 1, 1/2))[2];  # 中位值
 rt$group <- ifelse(  # 添加分组列
   rt[, "ABCA3"]>mid,
@@ -989,13 +989,13 @@ length = length(levels(factor(rt$group)));
 ```
 ![Kaplan–Meier生存分析2](./md-image/Kaplan–Meier生存分析2.png){:width=180 height=180}
 **生存分析**：
-```{r}
+``` r
 diff <- survdiff(Surv(time, state) ~ group, data = rt);
 pValue <- 1-pchisq(diff$chisq, df = length-1);
 fit <- survfit(Surv(time, state) ~ group, data = rt);
 ```
 **生存曲线**：
-```{r}
+``` r
 bioCol <- c("Firebrick3", "MediumSeaGreen", "#6E568C", "#223D6C");
 bioCol <- bioCol[1:length];
 surPlot <- ggsurvplot(
@@ -1028,7 +1028,7 @@ dev.off();
 需要获取GO/KEGG的基因集：进入[GSEA网站](https://www.gsea-msigdb.org/gsea/msigdb/human/collections.jsp#C5)，下载以下两个文件
 ![基因集富集分析GSEA1](./md-image/基因集富集分析GSEA1.png){:width=350 height=350}[下载](https://www.gsea-msigdb.org/gsea/msigdb/download_file.jsp?filePath=/msigdb/release/2024.1.Hs/c5.go.v2024.1.Hs.symbols.gmt)
 ![基因集富集分析GSEA2](./md-image/基因集富集分析GSEA2.png){:width=300 height=300}[下载](https://www.gsea-msigdb.org/gsea/msigdb/download_file.jsp?filePath=/msigdb/release/2024.1.Hs/c2.cp.kegg_legacy.v2024.1.Hs.symbols.gmt)
-```{r}
+``` r
 library("limma");
 library("org.Hs.eg.db");
 library("DOSE");
@@ -1036,7 +1036,7 @@ library("clusterProfiler");
 library("enrichplot");
 ```
 **读取表达矩阵并按logFC排序，将logFC独立成一个数组，元素名为基因名**：
-```{r}
+``` r
 rt <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA.all.Wilcoxon.txt", check.names = F, sep = '\t', header = T);
 rt <- rt[rt[, "logFC"]!=Inf, ];  # 去除异常值
 rt <- rt[order(rt[, "logFC"], decreasing = T), ];  # 排序
@@ -1045,7 +1045,7 @@ names(logFC) <- as.vector(rt[, 1]);
 ```
 ![基因集富集分析GSEA3](./md-image/基因集富集分析GSEA3.png){:width=170 height=170}
 **读取基因集文件**：
-```{r}
+``` r
 # 使用KEGG基因集
 gmt <- read.gmt("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSEA\\c2.cp.kegg_legacy.v2024.1.Hs.symbols.gmt");
 gmt[, 1] <- gsub("KEGG_", "", gmt[, 1]);  # 去掉第一列前面的KEGG_
@@ -1055,7 +1055,7 @@ gmt[, 1] <- gsub("KEGG_", "", gmt[, 1]);  # 去掉第一列前面的KEGG_
 ```
 ![基因集富集分析GSEA4](./md-image/基因集富集分析GSEA4.png){:width=200 height=200}
 **GSEA富集分析**：
-```{r}
+``` r
 kk <- GSEA(logFC, TERM2GENE = gmt, pvalueCutoff = 1);  # GSEA富集分析
 kkTab <- as.data.frame(kk);
 kkTab <- kkTab[kkTab$p.adjust<0.05, ];  # 根据p值筛选
@@ -1064,7 +1064,7 @@ write.table(kkTab, file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioi
 ![基因集富集分析GSEA5](./md-image/基因集富集分析GSEA5.png){:width=220 height=220}
 重点关注NES（富集分数）这一列，如果它<0，则该基因在正常组中显著富集；>0则在肿瘤组中显著富集
 **绘制肿瘤组和正常组富集图**：
-```{r}
+``` r
 termNum <- 5;  # 展示通路的数目
 # 肿瘤组
 kkUp <- kkTab[kkTab$NES>0, ];
@@ -1110,7 +1110,7 @@ ssGSEA：可以理解成是单样本的GSEA，对于一个基因集S，每一个
 GSVA与ssGSEA相同，只是使用了核密度估计的方法，用分布函数值代替基因表达值
 总的来说，ssGSEA基于秩和统计评估基因集的富集程度；GSVA评估基因集的活跃程度，是非参数化的
 需要包：`GSEABase`、`GSVA`
-```{r}
+``` r
 library("limma");
 if(!require("GSEABase", quietly = T))
 {
@@ -1129,7 +1129,7 @@ library(reshape2);
 library(ggpubr);
 ```
 读取tpm表达矩阵和基因集（这里还是以KEGG基因集为例）
-```{r}
+``` r
 data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA_LUSC_TPM.txt", check.names = F, sep = '\t', header = T, row.names = 1);
 dimnames <- list(rownames(data), colnames(data));
 data <- matrix(as.numeric(as.matrix(data)), nrow = nrow(data), dimnames = dimnames);  # 转为矩阵
@@ -1140,7 +1140,7 @@ geneSets <- getGmt(
 ```
 ![ssGSEA和GSVA1](./md-image/ssGSEA和GSVA1.png){:width=200 height=200}
 **ssgsea**：
-```{r}
+``` r
 # ssgsea分析
 ssgsea_data <- ssgseaParam(data, geneSets);
 ssgsea_res <- gsva(ssgsea_data);
@@ -1155,7 +1155,7 @@ write.table(ssgsea_save, file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-fo
 ```
 ![ssGSEA和GSVA2](./md-image/ssGSEA和GSVA2.png){:width=220 height=220}
 **画图：先分成肿瘤组和正常组**，方法同前（按样本名第14-15个字符）
-```{r}
+``` r
 # group：标识每个样本是正常还是癌症
 group <- sapply(strsplit(colnames(data), '\\-'), "[", 4);
 group <- sapply(strsplit(group, ''), "[", 1);
@@ -1173,7 +1173,7 @@ ssgsea_res_new <- cbind(type, t(ssgsea_res));  # 添加分组信息
 ![ssGSEA和GSVA3](./md-image/ssGSEA和GSVA3.png){:width=220 height=220}
 此时行名是样本名，列名是通路名
 **提取差异显著的通路**：
-```{r}
+``` r
 sig_gene <- c();  # 差异显著的基因
 for (i in colnames(ssgsea_res_new)[2:(ncol(ssgsea_res_new))]) {
   test <- wilcox.test(ssgsea_res_new[, i] ~ ssgsea_res_new[, "type"]);
@@ -1184,7 +1184,7 @@ for (i in colnames(ssgsea_res_new)[2:(ncol(ssgsea_res_new))]) {
 }
 ```
 **绘制热图**：
-```{r}
+``` r
 hm_exp <- ssgsea_res_new[, sig_gene];  # 差异显著的通路
 hm_exp <- t(hm_exp);
 type <- c(rep("Normal", con_num), rep("Tumor", treat_num));
@@ -1208,12 +1208,12 @@ dev.off();
 ![ssGSEA和GSVA4](./md-image/ssGSEA和GSVA4.png){:width=400 height=400}
 ### 样本配对的差异表达分析
 即寻找既测了正常又测了肿瘤的样本，对这些样本进行差异表达分析
-```{r}
+``` r
 library(limma);
 library(ggpubr);
 ```
 **读取tpm表达矩阵，并提取正常和肿瘤组样本的表达量**：
-```{r}
+``` r
 # tpm表达矩阵
 tpm <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA_LUSC_TPM.txt", check.names = F, row.names = 1, sep = '\t', header = T);
 dimnames <- list(rownames(tpm), colnames(tpm));
@@ -1233,7 +1233,7 @@ tumor <- data[, group==0];  # 肿瘤组
 - 更改样本名格式：`TCGA-90-A4EE-01A-11R-A24Z-07`->`TCGA.90.A4EE`（只保留前3部分名称）
 
 最后**取两组数据样本名的交集，合并两组数据**：
-```{r}
+``` r
 gene <- "A2M";  # 要提取的基因名称
 # 正常组
 normal <- t(normal);
@@ -1261,7 +1261,7 @@ same_data <- cbind(Normal, Tumor);
 ```
 ![样本配对的差异表达分析3](./md-image/样本配对的差异表达分析3.png){:width=200 height=200}
 **绘制图形**：
-```{r}
+``` r
 pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\single_pair_diff.pdf", width = 5.5, height = 5);
 ggpaired(
   as.data.frame(same_data),
@@ -1285,7 +1285,7 @@ dev.off();
 ---
 
 **对所有基因进行分析**：
-```{r}
+``` r
 tpm <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA_LUSC_TPM.txt", check.names = F, row.names = 1, sep = '\t', header = T);
 dimnames <- list(rownames(tpm), colnames(tpm));
 tpm <- matrix(as.numeric(as.matrix(tpm)), nrow = nrow(tpm), dimnames = dimnames);
@@ -1310,7 +1310,7 @@ same_data <- as.matrix(same_data);
 ![样本配对的差异表达分析5](./md-image/样本配对的差异表达分析5.png){:width=150 height=150}
 ![样本配对的差异表达分析6](./md-image/样本配对的差异表达分析6.png){:width=150 height=150}
 **分组进行差异分析**，并筛选出差异基因：（代码同差异分析那一节）
-```{r}
+``` r
 type <- c(rep(1, length(same_sample)), rep(2, length(same_sample)));
 same_data <- t(same_data);
 con_num <- length(same_sample);
@@ -1350,7 +1350,7 @@ write.table(outDiff, file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bi
 在普通最小二乘法的基础上，加入一个惩罚项，通过调整惩罚项系数来降低回归系数的方差，从而减少多重共线性的影响，并防止模型过拟合
 需要数据：tpm表达矩阵、生存时间和状态、单因素cox回归结果
 需要包：`glmnet`、`survival`
-```{r}
+``` r
 if(!require("glmnet", quietly = T))
 {
   install.packages("glmnet");
@@ -1360,7 +1360,7 @@ if(!require("glmnet", quietly = T))
 library(survival);
 ```
 **读取数据**，并提取表达矩阵和cox结果的共同基因，根据共同样本合并生存信息和表达矩阵：
-```{r}
+``` r
 library("readxl");
 library("tidyverse");
 # 生存信息
@@ -1393,14 +1393,14 @@ rt <- cbind(cli, data);  # 合并
   - `"binomial"`二元离散因变量
   - `"multinomial"`多元离散因变量
 
-```{r}
+``` r
 set.seed(123456);  # 设置随机种子
 x <- as.matrix(rt[, c(3:ncol(rt))]);  # 每个样本的各基因表达量
 y <- data.matrix(Surv(rt$time, rt$state));  # 生存信息
 fit <- glmnet(x, y, family = "cox", nfolds = 10);  # 构建模型
 ```
 **绘图**：
-```{r}
+``` r
 # c-index（交叉验证曲线）
 cvfit <- cv.glmnet(x, y, family = "cox", type.measure = "C", nfolds = 10);
 pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\lasso.c-index.pdf");
@@ -1409,7 +1409,7 @@ abline(v = log(c(cvfit$lambda.min, cvfit$lambda.1se)), lty = "dashed");
 dev.off();
 ```
 ![LASSO回归5](./md-image/LASSO回归5.png){:width=400 height=400}
-```{r}
+``` r
 # deviance（偏似然偏差）
 cvfit <- cv.glmnet(x, y, family = "cox", type.measure = "deviance", nfolds = 10);
 pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\lasso.cvfit.pdf");
@@ -1418,7 +1418,7 @@ abline(v = log(c(cvfit$lambda.min, cvfit$lambda.1se)), lty = "dashed");
 dev.off();
 ```
 ![LASSO回归6](./md-image/LASSO回归6.png){:width=400 height=400}
-```{r}
+``` r
 # coefficients（回归系数路径图）
 pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\lasso.lambda.pdf");
 plot(fit, xvar = "lambda", label = T);
@@ -1427,7 +1427,7 @@ dev.off();
 ```
 ![LASSO回归7](./md-image/LASSO回归7.png){:width=400 height=400}
 **lasso回归结果**：
-```{r}
+``` r
 coef <- coef(fit, s = cvfit$lambda.min);
 index <- which(coef!=0);  # 筛选系数不为0的基因为lasso回归结果
 act_coef <- coef[index];  # 每个基因对应的系数
@@ -1452,12 +1452,12 @@ write.table(lasso_sig_exp_save, file = "C:\\Users\\WangTianHao\\Documents\\GitHu
 以生存状态和生存时间为因变量，同时分析多因素对生存期的影响。可分析带有截尾生存时间（生存时间的截止不是由于死亡，而是其它原因引起）的资料，且不要求估计资料的生存分布类型
 使用数据：上面得到的lasso回归基因在各样本的表达量及生存信息
 **加载包并读取数据**：
-```{r}
+``` r
 library(survival);
 rt <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\lasso.SigExp.txt", check.names = F, row.names = 1, sep = '\t', header = T);
 ```
 **构建cox模型**：如果基因数>20，就使用逐步回归方式`step(cox模型, direction = "both")`（可选参数："both"/"backward"/"forward"），它可以进一步筛选影响较大的基因；反之就不执行该行代码
-```{r}
+``` r
 # 构建模型
 multi_cox <- coxph(Surv(time, state) ~ ., data = rt);
 multi_cox <- step(multi_cox, direction = "both");
@@ -1478,7 +1478,7 @@ write.table(outTab, file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bio
 ![多因素cox回归1](./md-image/多因素cox回归1.png){:width=150 height=150}
 共筛选出21个基因
 **计算病人风险值**：
-```{r}
+``` r
 risk_score <- predict(multi_cox, type = "risk", newdata = rt);
 cox_gene <- rownames(multi_cox_sum$coefficients);
 cox_gene <- gsub("`", "", cox_gene);
@@ -1498,7 +1498,7 @@ write.table(risk_res_save, file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-
 ```
 ![多因素cox回归2](./md-image/多因素cox回归2.png){:width=200 height=200}
 **绘图（同单因素cox回归）**：
-```{r}
+``` r
 rt <- read.table( "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\multiCox.txt", check.names = F, row.names = 1, sep = '\t', header = T);
 gene <- rownames(rt);
 hr <- sprintf("%.3f", rt$HR);
