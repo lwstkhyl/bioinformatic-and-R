@@ -394,11 +394,11 @@ boxplot <- ggboxplot(
     panel.background = element_rect(fill = "#F1F6FC"),
     panel.grid.major = element_line(
       color = "#CFD3D6", 
-      size =.5,
-      linetype ="dotdash"
+      size = .5,
+      linetype = "dotdash"
     ),
     legend.title = element_text(
-      face ="bold.italic",
+      face = "bold.italic",
       size = 13
     )
   );
