@@ -759,12 +759,13 @@ library(ggVolcano);
 ```
 **读入表达量数据**：
 ``` r
-data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\GSE30219.txt", header=T, sep="\t", check.names=F,row.names = 1);
+data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\GSE30219.txt", header = T, sep = "\t", check.names = F, row.names = 1);
 dimnames <- list(rownames(data), colnames(data));
 data <- matrix(as.numeric(as.matrix(data)), nrow = nrow(data), dimnames = dimnames);  # 转化为matrix
 # data=data[rowMeans(data)>1,];  # 去除低表达的基因
+# boxplot(data.frame(data),col="#4DBBD5"); 
 data <- normalizeBetweenArrays(data);  # 标准化
-# boxplot(data.frame(data),col="#4DBBD5");  # 查看结果是否标准化
+# boxplot(data.frame(data),col="#4DBBD5");  # 根据箱型图是否变平整查看结果是否标准化
 # 保存数据
 write.table(data.frame(ID = rownames(data), data), file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\geo_normalize.txt", sep = "\t", quote = F, row.names = F);
 ```
