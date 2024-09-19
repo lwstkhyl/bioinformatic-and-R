@@ -17,6 +17,7 @@
 - [批量生存分析](#批量生存分析)
 - [ICGC数据下载和整理](#icgc数据下载和整理)
     - [表达数据](#表达数据)
+    - [临床数据](#临床数据)
 - [自定义通路富集打分](#自定义通路富集打分)
 - [IPS预测免疫治疗反应](#ips预测免疫治疗反应)
     - [TCGA](#tcga)
@@ -27,7 +28,7 @@
 <!-- 打开侧边预览：f1->Markdown Preview Enhanced: open...
 只有打开侧边预览时保存才自动更新目录 -->
 
-写在前面：本篇教程来自b站课程[TCGA及GEO数据挖掘入门必看](https://www.bilibili.com/video/BV1b34y1g7RM) P35-P43
+写在前面：本篇教程来自b站课程[TCGA及GEO数据挖掘入门必看](https://www.bilibili.com/video/BV1b34y1g7RM) P35-P43 + P50
 
 ### GTEx数据下载和整理
 TCGA中正常组样本过少，差异分析时可能出现样本数不平衡的问题，因此考虑导入GTEx数据库的正常组织转录组测序数据
@@ -37,7 +38,7 @@ TCGA中正常组样本过少，差异分析时可能出现样本数不平衡的�
 ![GTEx数据下载和整理2](./md-image/GTEx数据下载和整理2.png){:width=300 height=300}
 ![GTEx数据下载和整理3](./md-image/GTEx数据下载和整理3.png){:width=150 height=150}
 ![GTEx数据下载和整理4](./md-image/GTEx数据下载和整理4.png){:width=180 height=180}
-```{r}
+``` r
 if(!require("AnnoProbe", quietly = T))
 {
   library(devtools);
@@ -54,7 +55,7 @@ library(AnnoProbe);
 library(tinyarray);
 ```
 **读取tpm表达矩阵**：
-```{r}
+``` r
 dat <- data.table::fread("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GTEx\\gtex_RSEM_gene_tpm.gz", data.table = F);  # 读入
 exp <- column_to_rownames(dat, "sample") %>%  # 将第一列sample转化行名
   as.matrix();
@@ -67,7 +68,7 @@ exp <- trans_array(exp, ids = an, from = "ENSEMBL", to = "SYMBOL");  # 转换行
 ![GTEx数据下载和整理5](./md-image/GTEx数据下载和整理5.png){:width=200 height=200}
 此时`exp`表达矩阵包含所有的样本
 **读取临床数据**：
-```{r}
+``` r
 clinical <- data.table::fread("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GTEx\\GTEX_phenotype.gz");  # 读入
 clinical <- clinical[clinical$`_primary_site`!="<not provided>", ];  # 删除未知补位的样本
 colnames(clinical)[3] <- "site";  # 修改列名
@@ -75,7 +76,7 @@ clinical.subset <- subset(clinical, site=="Lung");  # 获取指定部位（肺�
 ```
 ![GTEx数据下载和整理6](./md-image/GTEx数据下载和整理6.png){:width=170 height=170}
 **提取共同样本**：即对`exp`表达矩阵进行筛选（肺部的样本）
-```{r}
+``` r
 s <- intersect(colnames(exp),clinical.subset$Sample);  # 共同样本
 clinical.subset = clinical.subset[match(s, clinical.subset$Sample), ];
 exp <- exp[,s];  # 提取
@@ -98,7 +99,7 @@ write.table(data.frame(ID = rownames(exp), exp), file = "C:\\Users\\WangTianHao\
 **加权基因共表达网络分析**(weighted correlation network analysis, WGCNA)是用来描述不同样本间基因关联模式的系统生物学方法，可以用来鉴定高度协同变化的基因集，并根据基因集的内连性和基因集与表型间关联鉴定候补生物标记基因或治疗靶点
 总的来说，WGCNA可以鉴定协同变化的基因集合，并探究基因集合与表型间的关联
 需要数据：tpm表达矩阵、临床信息（性别、生存状态、T分期，也可以为肿瘤/正常组，这里只取肿瘤组样本分析）
-```{r}
+``` r
 if(!require("impute", quietly = T))
 {
   library("BiocManager");
@@ -125,7 +126,7 @@ library(WGCNA);
 - 生存状态：死亡用2表示，存活用1表示
 - T分期：用1、2、3、...表示
 
-```{r}
+``` r
 # 表达矩阵
 data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA_LUSC_TPM.txt", header = T, sep = "\t", check.names = F,row.names = 1);
 dimnames <- list(rownames(data), colnames(data));
@@ -160,7 +161,7 @@ write.table(data.frame(ID = rownames(cli), cli), "C:\\Users\\WangTianHao\\Docume
 ![WGCNA1](./md-image/WGCNA1.png){:width=200 height=200}
 **基因选取**：选择波动最大的前30%的基因进行WGCNA分析
 注：纳入的基因不易过多，否则需要运行很长一段时间，通常用5000个左右基因进行分析
-```{r}
+``` r
 selectGenes <- names(
   tail(
     sort(
@@ -175,7 +176,7 @@ datExpr0 <- t(data);
 ![WGCNA3](./md-image/WGCNA3.png){:width=200 height=200}
 可以看到现在有4705个基因
 **检查缺失值和识别离群值（异常值）**：
-```{r}
+``` r
 gsg <- goodSamplesGenes(datExpr0, verbose = 3);
 gsg$allOK;  # 如果为true就是没有，不执行下面的代码
 if (!gsg$allOK){
@@ -187,7 +188,7 @@ if (!gsg$allOK){
 }
 ```
 **聚类所有样本，观察是否有离群值或异常值，并选取剪切值**：
-```{r}
+``` r
 sampleTree <- hclust(dist(datExpr0), method = "average");
 # 画图1
 pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\1_sample_cluster.1.pdf", width = 12, height = 9);
@@ -205,7 +206,7 @@ dev.off();
 ![WGCNA5](./md-image/WGCNA5.png){:width=400 height=400}
 **剪切值**：当剪切值设为80000时，以树干（黄色线）为分界线，树状图左边的分支（红框）会被删除，右边（蓝框）保留
 这里选取剪切值为100000，如果不想要删除可以将`cutHeight`设置的高些
-```{r}
+``` r
 cutHeight <- 100000;  # 剪切值
 # 画图2（剪切线）
 pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\1_sample_cluster.2.pdf", width = 12, height = 9);
@@ -227,7 +228,7 @@ datExpr0 <- datExpr0[keepSamples, ];
 ![WGCNA7](./md-image/WGCNA7.png){:width=200 height=200}
 可以看到原来是501个样本，现在是500个样本
 **构建自动化网络和检测模块，绘制power值散点图，选择软阈值**：
-```{r}
+``` r
 enableWGCNAThreads();  # 多线程工作
 powers <- c(1:20);  # 幂指数范围1:20
 sft <- pickSoftThreshold(datExpr0, powerVector = powers, verbose = 5);
@@ -269,7 +270,7 @@ dev.off();
 对于`Scale independence`，一般选择在0.9以上的，第一个达到0.9以上的数值（）；对于`Mean connectivity`，要选取较平滑的值
 **邻接矩阵转换，查看最佳power值**：
 注：如果显示的结果为 NA，则表明系统无法给出合适的软阈值，这时候就需要自己挑选软阈值
-```{r}
+``` r
 softPower <- sft$powerEstimate;
 adjacency <- adjacency(datExpr0, power = softPower);
 softPower;
@@ -293,7 +294,7 @@ if (is.na(softPower)){
 ![WGCNA9](./md-image/WGCNA9.png){:width=70 height=70}
 可以看到应选取的power值为6
 **基因聚类**：
-```{r}
+``` r
 # TOM矩阵
 TOM <- TOMsimilarity(adjacency);
 dissTOM <- 1-TOM;
@@ -310,7 +311,7 @@ dev.off();
 ```
 ![WGCNA10](./md-image/WGCNA10.png){:width=400 height=400}
 **动态剪切模块识别**：
-```{r}
+``` r
 #模块基因数目
 minModuleSize <- 100;  # 最小单个模块包含基因数
 dynamicMods <- cutreeDynamic(
@@ -337,7 +338,7 @@ dev.off();
 ![WGCNA11](./md-image/WGCNA11.png){:width=400 height=400}
 上面图是基因聚类的结果，下面是根据`minModuleSize`划分的不同的模块，每种颜色代表一个模块
 **查找相似模块**：通过计算模块的代表性模式和模块之间的定量相似性评估，合并表达图谱相似的模块
-```{r}
+``` r
 MEList <- moduleEigengenes(datExpr0, colors = dynamicColors);
 MEs <- MEList$eigengenes;
 MEDiss <- 1-cor(MEs);
@@ -354,7 +355,7 @@ dev.off();
 ![WGCNA12](./md-image/WGCNA12.png){:width=400 height=400}
 可以看到有三个模块，它们的高度都>0.7，没有<0.3的模块，可不用进行下面的相似模块合并（执行一遍下面的代码也可以）
 **相似模块合并**：
-```{r}
+``` r
 merge <- mergeCloseModules(
   datExpr0, 
   dynamicColors, 
@@ -385,7 +386,7 @@ MEs <- mergedMEs;
 `MEs`：
 ![WGCNA14](./md-image/WGCNA14.png){:width=180 height=180}
 **提取共有样本**：
-```{r}
+``` r
 # 重新读入临床数据
 cli2 <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\WGCNA_cli.txt", header = T, sep = "\t", check.names = F, row.names = 1);
 # 提取共有样本
@@ -423,7 +424,7 @@ dev.off();
 ![WGCNA15](./md-image/WGCNA15.png){:width=500 height=500}
 横坐标是表型/临床特征（性别、生存状态、临床T分期），纵坐标是分析模块（将基因分成了蓝色、青色、灰色三个模块），3*3个数据值：红色表示正相关、蓝色负相关、0不相关，方块中上面的数字表示相关性系数，下面的括号里的表示相关性系数对应的p值
 **标识每个基因所在的模块，并保存每个模块的基因**：
-```{r}
+``` r
 # 每个基因所在的模块
 probes <- colnames(datExpr0);
 geneInfo0 <- data.frame(
@@ -455,7 +456,7 @@ for (mod in 1:nrow(table(moduleColors))){
 - MM（相关性）：基因和表型性状之间的相关性的绝对值
 
 以MEturquoise（青色的那个组）中的性别为例（因为在上面的相关图中，只有这个块的p值<0.05）
-```{r}
+``` r
 module <- "turquoise";
 Selectedclinical <- "Sex";
 Selectedclinical2 <- "Sex";
@@ -491,7 +492,7 @@ dev.off();
 ![WGCNA18](./md-image/WGCNA18.png){:width=400 height=400}
 横坐标是MM在青色模块中的值，纵坐标是GS在性别中的值，副标题标识了相关性系数和p值
 **计算模块中的核心基因**：
-```{r}
+``` r
 # 合并
 datMM <- cbind(
   geneModuleMembership[, paste("MM", module, sep = "")],
@@ -518,7 +519,7 @@ write.table(
 **主成分分析方法**(Principal Component Analysis, PCA)是一种广泛使用的数据**降维算法**。主要思想是将n维特征映射到k维上，这k维是全新的正交特征，也被称为主成分，是在原有n维特征的基础上重新构造处理的k维特征
 比如我们有一个数据集包含10000个基因，10000个基因数量太多，不好理解，可以通过PCA将这10000个基因转化为带有权重的几十个基因集合；PCA结果中越前面的基因，所占的权重越高，因此画图时通常取前2或3个基因集合，用于代替整个表达模式
 需要数据：各样本的差异基因表达量和风险分组
-```{r}
+``` r
 if(!require("scatterplot3d", quietly = T))
 {
   install.packages("scatterplot3d");
@@ -528,7 +529,7 @@ library(ggplot2);
 library(scatterplot3d);
 ```
 **读取数据**：
-```{r}
+``` r
 rt <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\risk.txt", header = T, sep = "\t", check.names = F, row.names = 1);
 risk <- as.vector(rt$risk);  # 高/低风险组
 data <- rt[, 3:(ncol(rt)-2)];  # 各样本的各基因表达量
@@ -536,7 +537,7 @@ data <- rt[, 3:(ncol(rt)-2)];  # 各样本的各基因表达量
 ![PCA1](./md-image/PCA1.png){:width=200 height=200}
 ![PCA2](./md-image/PCA2.png){:width=100 height=100}
 **PCA分析并绘图**：
-```{r}
+``` r
 # PCA分析
 data.pca <- prcomp(data, scale. = TRUE);
 pcaPredict <- predict(data.pca);
@@ -599,13 +600,13 @@ dev.off();
 二维图横纵坐标分别是PC1和PC2（基因集合），不同的颜色代表不同的分组，可以看到低风险组主要位于左上角、高风险组主要位于右下角，表明高/低风险组的基因表达模式是不同的，三维图同理
 ### 批量生存分析
 需要数据：tpm表达矩阵、生存信息（样本名、生存时间、状态）
-```{r}
+``` r
 library(limma);
 library(survival);
 library(survminer);
 ```
 **读取tpm表达矩阵、生存信息，合并**：
-```{r}
+``` r
 # 表达矩阵
 data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA_LUSC_TPM.txt", header = T, sep = "\t", check.names = F,row.names = 1);
 dimnames <- list(rownames(data), colnames(data));
@@ -633,7 +634,7 @@ rt <- cbind(cli, data);
 ```
 ![批量生存分析1](./md-image/批量生存分析1.png){:width=170 height=170}
 **批量生存分析**：
-```{r}
+``` r
 geneNum <- 50;  # 为节省时间，仅判断前50个基因
 outTab <- data.frame();  # 结果矩阵
 for(gene in colnames(rt[, 3:(2+geneNum)])){
@@ -700,11 +701,11 @@ write.table(outTab, file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bio
 - `exp_seq.all_projects.specimen.USonly.xena.tsv`列名为样本名，行名是基因名，数据是表达量
 - `specimen.all_projects.tsv`主要提供每个样本在哪个数据集，以及属于正常/肿瘤组
 ##### 表达数据
-```{r}
+``` r
 library(tidyverse);
 ```
 **读取表达矩阵和分组信息**：
-```{r}
+``` r
 # 表达矩阵
 exp <- read_delim(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\ICGC数据\\exp_seq.all_projects.specimen.USonly.xena.tsv", delim = "\t", col_names = TRUE);
 # 分组信息
@@ -716,7 +717,7 @@ cli <- select(cli, c("specimen_type", "project_code"));
 分组信息：
 ![ICGC数据下载和整理3](./md-image/ICGC数据下载和整理3.png){:width=170 height=170}
 **提取来自`LUSC_CN`、`LUSC_KR`和`LUSC_US`的样本**：
-```{r}
+``` r
 LUSC_CN <- subset(cli, cli$project_code == c("LUSC-CN"));
 LUSC_KR <- subset(cli, cli$project_code == c("LUSC-KR"));
 LUSC_US <- subset(cli, cli$project_code == c("LUSC-US"));
@@ -728,7 +729,7 @@ LUSC <- rbind(LUSC_CN, LUSC_KR, LUSC_US);
 注：`project_code`中带US的（来自美国的）一般都是TCGA的样本，因此如果想结合TCGA分析，就不要使用这些带US的样本
 **获取正常和肿瘤样本，并取交集**（LUSC的样本、正常/肿瘤的样本、表达矩阵中含有的样本）：
 注：正常样本的`specimen_type`列值为`Normal - blood derived`或`Normal - tissue adjacent to primary`，其它的都是肿瘤样本
-```{r}
+``` r
 # 正常/肿瘤组的分组信息
 normal <- subset(cli, cli$specimen_type == c("Normal - blood derived", "Normal - tissue adjacent to primary"));
 tumor <- subset(cli, cli$specimen_type != c("Normal - blood derived", "Normal - tissue adjacent to primary"));
@@ -747,17 +748,49 @@ tumorexp <- exp[, tumornames];
 ![ICGC数据下载和整理7](./md-image/ICGC数据下载和整理7.png){:width=180 height=180}
 可以看到只剩下451和22个样本
 **合并正常/肿瘤组表达矩阵，同时加上基因名标记**：
-```{r}
+``` r
 rt <- cbind(exp[, 1, drop = F], normalexp, tumorexp);
 rt <- rt[-1, ];  # 删除第一行（基因名为?的那一行，是无用信息）
 write.table(rt, 'C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\ICGC数据\\matrix.txt', sep = "\t", quote = F, row.names = F);
 ```
 ![ICGC数据下载和整理8](./md-image/ICGC数据下载和整理8.png){:width=180 height=180}
 总共22+451+1=474列（正常+肿瘤+基因名），列名是样本名，行名（第一列）是基因名，数据是各基因在各样本中的表达量
+##### 临床数据
+``` r
+library(tidyverse);
+```
+**读取临床信息和表达矩阵，合并**：
+``` r
+# 临床信息
+cli <- read_delim(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\ICGC数据\\donor.all_projects.overallSurvival_transfer_specimen", delim = "\t", col_names = TRUE);
+cli <- as.data.frame(cli);
+rownames(cli) <- cli[, 1];  # 行名为样本名
+# 表达矩阵
+data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\ICGC数据\\matrix.txt", header = T, sep = "\t", check.names = F, row.names = 1);
+# 合并
+samesample <- intersect(rownames(cli), colnames(data));
+cli.samesample <- cli[samesample, ];
+```
+![ICGC数据下载和整理临床数据1](./md-image/ICGC数据下载和整理临床数据1.png){:width=180 height=180}
+**去除NA值，仅保留生存状态和生存时间列**：
+``` r
+cli.samesample <- na.omit(cli.samesample);
+cli.samesample <- cli.samesample[, c(3, 4)];
+# 保存
+write.table(
+  data.frame(
+    ID = rownames(cli.samesample),
+    cli.samesample
+  ),
+  file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\ICGC数据\\clinical.time.txt", 
+  sep = "\t", quote = F, row.names = F, col.names = T
+);
+```
+![ICGC数据下载和整理临床数据2](./md-image/ICGC数据下载和整理临床数据2.png){:width=200 height=200}
 ### 自定义通路富集打分
 需要数据：tpm表达矩阵，自定义基因集（第一列是基因集名称，第二列是对基因集的描述，如果没有就设为NA，后面是各基因集包含的基因）
 ![自定义通路富集打分1](./md-image/自定义通路富集打分1.png){:width=70 height=70}
-```{r}
+``` r
 library(limma);
 library(GSEABase);
 library(GSVA);
@@ -767,7 +800,7 @@ library(ggpubr);
 library(readxl);
 ```
 **读取表达矩阵和基因集**：
-```{r}
+``` r
 # 表达矩阵
 data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA_LUSC_TPM.txt", header = T, sep = "\t", check.names = F,row.names = 1);
 dimnames <- list(rownames(data), colnames(data));
@@ -780,7 +813,7 @@ geneSets <- getGmt("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformat
 ```
 ![自定义通路富集打分2](./md-image/自定义通路富集打分2.png){:width=350 height=350}
 **打分并标准化**：
-```{r}
+``` r
 # 打分
 gsvapar <- gsvaParam(data, geneSets, kcdf = 'Gaussian', absRanking = TRUE);
 gsvaResult <- gsva(gsvapar);
@@ -794,7 +827,7 @@ write.table(gsvaOut, file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bi
 ![自定义通路富集打分3](./md-image/自定义通路富集打分3.png){:width=220 height=220}
 这是不同的样本在三个自定义通路中的得分情况
 **分组，并提取差异显著的通路**：
-```{r}
+``` r
 # 分组
 group <- sapply(strsplit(colnames(data), '\\-'), "[", 4);
 group <- sapply(strsplit(group, ''), "[", 1);
@@ -825,7 +858,7 @@ hmExp <- t(hmExp);
 ```
 ![自定义通路富集打分4](./md-image/自定义通路富集打分4.png){:width=200 height=200}
 **画箱线图**：
-```{r}
+``` r
 # 输入数据格式转换（宽变长）
 hmExp2 <- t(hmExp);
 hmExp2 <- cbind(hmExp2, Type);
@@ -880,12 +913,12 @@ dev.off();
 点击`Export all to TSV`下载
 ![IPS预测免疫治疗反应2](./md-image/IPS预测免疫治疗反应2.png){:width=300 height=300}
 除此之外，还需要tpm表达矩阵
-```{r}
+``` r
 library(reshape2);
 library(ggpubr);
 ```
 **读取临床数据和表达矩阵，合并**：
-```{r}
+``` r
 # 临床数据
 tcia <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\TCIA-ClinicalData.tsv", header = T, sep = "\t", check.names = F, row.names = 1);
 tcia <- tcia[, c("ips_ctla4_neg_pd1_neg", "ips_ctla4_neg_pd1_pos", "ips_ctla4_pos_pd1_neg", "ips_ctla4_pos_pd1_pos")];  # 仅选取这4列与免疫抑制剂相关的
@@ -908,7 +941,7 @@ data <- cbind(tcia,data);
 ```
 ![IPS预测免疫治疗反应3](./md-image/IPS预测免疫治疗反应3.png){:width=150 height=150}
 **按CTLA4表达量分组，并转换数据格式**（宽变长）：
-```{r}
+``` r
 # 分组
 data$group <- ifelse(
   data[, "CTLA4"]>quantile(data[, "CTLA4"], seq(0, 1, 1/2))[2],
@@ -923,7 +956,7 @@ rt$group <- factor(rt$group, levels = group);
 ```
 ![IPS预测免疫治疗反应4](./md-image/IPS预测免疫治疗反应4.png){:width=170 height=170}
 **画提琴图**：
-```{r}
+``` r
 violin <- ggviolin(
   rt, x = "Genesets", y = "Expression", 
   fill = "group",
@@ -962,7 +995,7 @@ dev.off();
 按CTLA4表达量高低分组；横坐标标识了使用了哪种免疫抑制剂，pos是使用、neg是没使用，比如`ctla4_pos_pd1_pos`就是使用了ctla4和pd1这两种免疫抑制剂；纵坐标是得分，得分越高，则该组对指定的抑制剂就越敏感
 ##### 非TCGA
 需要数据：GEO数据库的GSE74777数据集
-```{r}
+``` r
 if(!require("IOBR", quietly = T))
 {
   library("devtools");
@@ -976,7 +1009,7 @@ library(limma);
 library(reshape2);
 ```
 **读入表达矩阵，并进行ips分析**：
-```{r}
+``` r
 # 表达矩阵
 data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE74777\\GSE74777.txt", header = T, sep = "\t", check.names = F, row.names = 1);
 # 标准化
@@ -991,7 +1024,7 @@ data <- cbind(ips, data[, "CTLA4", drop=F]);
 ![IPS预测免疫治疗反应非TCGA1](./md-image/IPS预测免疫治疗反应非TCGA1.png){:width=170 height=170}
 注：`deconvo_tme`还可以做其它很多的免疫分析
 **按CTLA4表达量分组，并转换数据格式**（宽变长）：与上面TCGA的类似
-```{r}
+``` r
 # 分组
 data$group <- ifelse(
   data[,"CTLA4"]>quantile(data[, "CTLA4"], seq(0, 1, 1/2))[2],
@@ -1006,7 +1039,7 @@ rt$group <- factor(rt$group, levels = group);
 ```
 ![IPS预测免疫治疗反应非TCGA2](./md-image/IPS预测免疫治疗反应非TCGA2.png){:width=200 height=200}
 **画箱线图**：（与预测药物敏感性的代码相同）
-```{r}
+``` r
 boxplot <- ggboxplot(
   rt, x = "Genesets", y = "Expression", 
   fill = "group",
