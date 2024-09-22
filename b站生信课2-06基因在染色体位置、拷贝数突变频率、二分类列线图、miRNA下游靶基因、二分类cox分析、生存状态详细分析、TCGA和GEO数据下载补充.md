@@ -21,18 +21,17 @@
 - [单/多因素cox分析筛选预后相关因素](#单多因素cox分析筛选预后相关因素)
     - [基本方法](#基本方法)
     - [改进](#改进)
-- [二分类LASSO回归](#二分类lasso回归)
 
 <!-- /code_chunk_output -->
 
 <!-- 打开侧边预览：f1->Markdown Preview Enhanced: open...
 只有打开侧边预览时保存才自动更新目录 -->
 
-写在前面：本篇教程来自b站课程[TCGA及GEO数据挖掘入门必看](https://www.bilibili.com/video/BV1b34y1g7RM) P44-P
+写在前面：本篇教程来自b站课程[TCGA及GEO数据挖掘入门必看](https://www.bilibili.com/video/BV1b34y1g7RM) P44-P55
 
 ### 基因所在染色体位置
 需要数据：一个标识各基因在染色体上位置的文件`Ref.txt`，要标识的基因名称（这里以多因素cox回归得到的基因为例）
-```{r}
+``` r
 if(!require("RCircos", quietly = T))
 {
   library(BiocManager);
@@ -41,7 +40,7 @@ if(!require("RCircos", quietly = T))
 library("RCircos");
 ```
 **读取数据**：基因位置信息、基因名称
-```{r}
+``` r
 data(UCSC.HG19.Human.CytoBandIdeogram);  # 内置的人类染色体数据
 data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\multiCox.txt", check.names = F, row.names = 1, sep = '\t', header = T);  # 基因名称
 dataref <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\Ref.txt", header = T, sep = "\t", check.names = F, row.names = 1);  # 基因位置信息
@@ -51,14 +50,14 @@ generef <- dataref[samegene, ];
 ```
 ![基因所在染色体位置1](./md-image/基因所在染色体位置1.png){:width=200 height=200}
 **修改格式**：将行名（基因名）提取为`Gene`列
-```{r}
+``` r
 generef2 <- cbind(generef[, 1:3], rownames(generef));
 colnames(generef2) <- c("Chromosome", "chromStart", "chromEnd", "Gene");  # 改列名
 generef2[, 1] <- paste("chr", generef2[, 1], sep = "");  # 在染色体名称前加"chr"
 ```
 ![基因所在染色体位置2](./md-image/基因所在染色体位置2.png){:width=170 height=170}
 **画图**：
-```{r}
+``` r
 pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\Circle.pdf", width = 7, height = 7);
 cyto.info <- UCSC.HG19.Human.CytoBandIdeogram;
 chr.exclude <- NULL;
@@ -85,13 +84,13 @@ dev.off();
 ![拷贝数突变频率2](./md-image/拷贝数突变频率2.png){:width=220 height=220}
 下载后解压，行名是基因symbol，列名是样本名
 需要数据：刚才下载的突变数据、基因列表（这里以多因素cox回归得到的基因为例）、基因组注释文件`GRCh38.gtf`（[下载方法](https://blog.csdn.net/u011262253/article/details/89363809)）
-```{r}
+``` r
 library(maftools);
 library(rtracklayer);
 library(stringr);
 ```
 **读取突变数据**：
-```{r}
+``` r
 CNV <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\TCGA-LUSC.gistic.tsv", header = T, sep = "\t", check.names = F, row.names = 1);
 # 更改行名，删除.之后的数
 rownames(CNV) <- unlist(lapply(rownames(CNV), function(x){
@@ -100,7 +99,7 @@ rownames(CNV) <- unlist(lapply(rownames(CNV), function(x){
 ```
 ![拷贝数突变频率3](./md-image/拷贝数突变频率3.png){:width=200 height=200}
 **读取注释信息，并将基因id转为基因名**：（类似于GEO数据的注释）
-```{r}
+``` r
 gtf <- rtracklayer::import('C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GRCh38.gtf');
 gtf <- as.data.frame(gtf);
 ids <- gtf[, c("gene_id", "gene_name")];
@@ -115,7 +114,7 @@ CNV <- CNV[, -c(1, 2)];  # 去除前两列（基因id和基因名）
 ```
 ![拷贝数突变频率4](./md-image/拷贝数突变频率4.png){:width=230 height=230}
 **读取基因名称，合并，并计算GAIN和LOSS值**：
-```{r}
+``` r
 data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\multiCox.txt", check.names = F, row.names = 1, sep = '\t', header = T);  # 基因名称
 samegenes <- intersect(rownames(data),rownames(CNV));  # 共有基因
 rt <- CNV[samegenes, ];  # 提取
@@ -131,7 +130,7 @@ data <- data[order(data[, "GAIN"], decreasing = T), ];
 ![拷贝数突变频率5](./md-image/拷贝数突变频率5.png){:width=200 height=200}
 行名是基因名，列分别是GAIN和LOSS值
 **画图**：
-```{r}
+``` r
 data.max <- apply(data, 1, max);  # 每个基因GAIN和LOSS两者中的的最大值
 pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\CNV.frequency.pdf", width = 9, height = 6);
 cex <- 1.3;
@@ -169,12 +168,12 @@ dev.off();
 ![拷贝数突变频率6](./md-image/拷贝数突变频率6.png){:width=300 height=300}
 横坐标是基因，纵坐标是拷贝数突变频率，gain和loss分别代表增加和丢失
 ### TCGA甲基化数据下载和整理
-```{r}
+``` r
 library(stringr);
 library(tidyverse);
 ```
-读取json文件，获取样本名称和文件名称的对照：
-```{r}
+**读取json文件，获取样本名称和文件名称的对照**：
+``` r
 json <- jsonlite::fromJSON("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\甲基化数据\\metadata.cart.2023-12-31.json");
 # 样本名称
 sample_id <- sapply(json$associated_entities, function(x){x[, 1]});
@@ -183,16 +182,16 @@ file_name <- json$file_name;
 # 合并成df
 file_sample <- data.frame(sample_id, file_name);
 ```
-![TCGA甲基化数据下载和整理1](./md-image/TCGA甲基化数据下载和整理1.png){:width=200 height=200}
-获取每个txt的文件名称：
-```{r}
+![TCGA甲基化数据下载和整理1](./md-image/TCGA甲基化数据下载和整理1.png){:width=170 height=170}
+**获取每个txt的文件名称**：
+``` r
 count_file <- list.files('C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\甲基化数据\\gdc_download_20231230_164551.556154\\', pattern = '*level3betas.txt', recursive = TRUE);
 count_file_name <- strsplit(count_file, split='/');
 count_file_name <- sapply(count_file_name, function(x){x[2]});
 ```
-![TCGA甲基化数据下载和整理2](./md-image/TCGA甲基化数据下载和整理2.png){:width=200 height=200}
-读取数据，结果矩阵中列名是样本名，行名是甲基化位点：
-```{r}
+![TCGA甲基化数据下载和整理2](./md-image/TCGA甲基化数据下载和整理2.png){:width=100 height=100}
+**读取数据**：结果矩阵中列名是样本名，行名是甲基化位点
+``` r
 # 先读取一个文件，看看有多少行
 test_data <- read.delim(
   paste0('C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\甲基化数据\\gdc_download_20231230_164551.556154\\', count_file[1]), 
@@ -214,30 +213,30 @@ for (i in 1:length(count_file)){
   matrix <- cbind(matrix, data);  # 添加到结果矩阵中
 }
 ```
-![TCGA甲基化数据下载和整理3](./md-image/TCGA甲基化数据下载和整理3.png){:width=200 height=200}
-删除NA并导出：
-```{r}
+![TCGA甲基化数据下载和整理3](./md-image/TCGA甲基化数据下载和整理3.png){:width=230 height=230}
+**删除NA并导出**：
+``` r
 matrix <- na.omit(matrix);  # 删除NA
 save_df <- data.frame(ID = rownames(matrix), matrix);
 colnames(save_df) <- gsub('[.]', '-', colnames(save_df));
 # 保存
 write.table(save_df, 'C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\甲基化数据\\methylation.450.txt', sep = "\t", quote = F, row.names = F);
 ```
-![TCGA甲基化数据下载和整理4](./md-image/TCGA甲基化数据下载和整理4.png){:width=200 height=200}
+![TCGA甲基化数据下载和整理4](./md-image/TCGA甲基化数据下载和整理4.png){:width=220 height=220}
 
 ---
 
 补充：也可以从[UCSC](https://xenabrowser.net/datapages/)中下载：
 找到[TCGA Lung Squamous Cell Carcinoma (LUSC)](https://xenabrowser.net/datapages/?cohort=TCGA%20Lung%20Squamous%20Cell%20Carcinoma%20(LUSC)&removeHub=https%3A%2F%2Fxena.treehouse.gi.ucsc.edu%3A443)
-![TCGA甲基化数据下载和整理5](./md-image/TCGA甲基化数据下载和整理5.png){:width=200 height=200}
+![TCGA甲基化数据下载和整理5](./md-image/TCGA甲基化数据下载和整理5.png){:width=100 height=100}
 找到[Methylation450k](https://tcga-xena-hub.s3.us-east-1.amazonaws.com/download/TCGA.LUSC.sampleMap%2FHumanMethylation450.gz)
-![TCGA甲基化数据下载和整理6](./md-image/TCGA甲基化数据下载和整理6.png){:width=200 height=200}
+![TCGA甲基化数据下载和整理6](./md-image/TCGA甲基化数据下载和整理6.png){:width=300 height=300}
 下载的文件与刚才整理的相同，都是行名是样本名，列名是甲基化编号，不过未删除NA值
-![TCGA甲基化数据下载和整理7](./md-image/TCGA甲基化数据下载和整理7.png){:width=200 height=200}
+![TCGA甲基化数据下载和整理7](./md-image/TCGA甲基化数据下载和整理7.png){:width=100 height=100}
 ### logistic列线图
 之前的是使用cox方法（有多个因素，预测模型），对于单一的二分类的变量（比如正常/肿瘤组、控制/治疗组，诊断模型），可以使用logistic方法
 需要数据：`GSE30219.txt`表达矩阵（行名为基因名，列名为样本名，数据为表达量），之前在GEO差异表达分析中得到的`Control.txt`和`Treat.txt`分组（控制/治疗组），当然也可以使用正常/肿瘤组
-```{r}
+``` r
 if(!require("rmda", quietly = T))
 {
   install.packages("rmda");
@@ -247,7 +246,7 @@ library("rmda");
 library(limma);
 ```
 **读取表达矩阵并标准化**：
-```{r}
+``` r
 data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\GSE30219.txt", header = T, sep = "\t", check.names = F, row.names = 1);
 # 转化为matrix
 dimnames <- list(rownames(data), colnames(data));
@@ -265,7 +264,7 @@ write.table(
 ```
 ![logistic列线图1](./md-image/logistic列线图1.png){:width=150 height=150} 
 **选取基因，读取分组信息**：
-```{r}
+``` r
 gene <- c("A1BG","A1CF","A2M","A2ML1","A2MP1","A4GALT");  # 基因列表
 #获取基因
 data <- data[gene, ];  # 提取表达矩阵
@@ -285,7 +284,7 @@ rt <- cbind(as.data.frame(data), Type = group);
 ![logistic列线图2](./md-image/logistic列线图2.png){:width=170 height=170} 
 前6列是基因名，最后一列是分组信息，行名是样本名
 **构建模型**：
-```{r}
+``` r
 model <- paste0("Type", "~", paste(colnames(data), collapse="+"));  # 模型公式：Type~A1BG+A1CF+A2M+A2ML1+A2MP1+A4GALT
 ddist <- datadist(rt);
 options(datadist = "ddist");  # 为模型设置数据
@@ -299,7 +298,7 @@ nomo <- nomogram(
 );
 ```
 **列线图**：
-```{r}
+``` r
 pdf("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\Nom.pdf", width = 9, height = 6);
 plot(nomo);
 dev.off();
@@ -307,7 +306,7 @@ dev.off();
 ![logistic列线图3](./md-image/logistic列线图3.png){:width=400 height=400} 
 最上面的`points`是得分，中间的6行是随机挑选的6个基因，横坐标对应着不同的得分。以A1BG这行为例，它横坐标为5时对应的points为0、为8.5时对应的points为100，即表达量为5时得分为0、表达量为8.5时得分为100。`total points`是总得分，最下面的`risk of disease`是患病几率，如果总得分为0，它对应着的患病几率为0，就是不会患病；如果总得分为60，它对应着的患病几率为0.5，就是有50%几率患病；如果总得分为260，它对应着的患病几率为1，就是一定患病
 **校准曲线**：
-```{r}
+``` r
 cali <- calibrate(lrmModel, method = "boot", B = 1000);
 pdf("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\Calibration.pdf", width = 6, height = 6);
 plot(
@@ -320,7 +319,7 @@ dev.off();
 ![logistic列线图4](./md-image/logistic列线图4.png){:width=400 height=400} 
 `Bias−corrected`线与`Ideal`线（对角线）越重合，结果越好（因为这里是随便选的基因，拟合效果不是很好）
 **决策曲线，DCA图形**：
-```{r}
+``` r
 rt$Type <- ifelse(rt$Type=="Control", 0, 1);  # 控制组的值为1
 # 决策曲线
 dc <- decision_curve(
@@ -347,17 +346,17 @@ dev.off();
 `six genes`线离`All`线越远，结果越好
 ### 生存状态+风险曲线+表达热图
 需要数据：风险得分以及各基因在样本中的表达量`risk.txt`
-```{r}
+``` r
 library(pheatmap);
 ```
 **读取数据，并按风险得分从小到大排序**：
-```{r}
+``` r
 rt <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\risk.txt", header = T, sep = "\t", check.names = F, row.names = 1);
 rt <- rt[order(rt$riskScore), ];
 ```
 ![表达热图1](./md-image/表达热图1.png){:width=200 height=200}
 **风险曲线**：
-```{r}
+``` r
 riskClass <- rt[, "risk"];
 lowLength <- length(riskClass[riskClass=="low"]);
 highLength <- length(riskClass[riskClass=="high"]);
@@ -389,7 +388,7 @@ dev.off();
 ![表达热图2](./md-image/表达热图2.png){:width=300 height=300}
 横坐标是病人编号，纵坐标是风险得分，不同颜色代表高/低风险组。可以看到以x轴中点为分界线，一半病人是高风险，一半病人是低风险，右上角点密集处就是风险得分超过10的病人（为了让图不过高，让超过10的风险得分全画在了10的位置上）
 **生存状态图**：
-```{r}
+``` r
 color <- as.vector(rt$state);
 color[color==1] <- "Firebrick3";
 color[color==0] <- "MediumSeaGreen";
@@ -414,7 +413,7 @@ dev.off();
 ![表达热图3](./md-image/表达热图3.png){:width=300 height=300}
 横坐标是病人编号，纵坐标是生存时间/年，不同颜色代表生存状态
 **热图**：
-```{r}
+``` r
 # 颜色
 ann_colors <- list();
 bioCol <- c("MediumSeaGreen", "Firebrick3");
@@ -450,7 +449,7 @@ dev.off();
 ![表达热图4](./md-image/表达热图4.png){:width=500 height=500}
 上面的risk标明了高/低风险组，横坐标是样本，纵坐标是基因名，每个块的值是表达量
 ### 预测microRNA下游靶基因
-```{r}
+``` r
 if(!require("multiMiR", quietly = T))
 {
   library("BiocManager");
@@ -459,8 +458,8 @@ if(!require("multiMiR", quietly = T))
 library("multiMiR");
 library(tidyverse);
 ```
-读取mirna文件（获取要预测的mirna名称），进行预测：
-```{r}
+**读取mirna文件（获取要预测的mirna名称），进行预测**：
+``` r
 # 读取文件
 data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\miRNA.RPM.txt", sep = "\t", check.names = F,header = T, row.names = 1);
 gene <- rownames(data)[1:5];  # 以前5个mirna为例
@@ -474,7 +473,7 @@ example_result <- example@data;
 # 保存
 write.table(example_result, file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\mirna_all.predict.txt", sep = "\t", quote = F, row.names = F, col.names = T);
 ```
-![预测microRNA下游靶基因1](./md-image/预测microRNA下游靶基因1.png){:width=500 height=500}
+![预测microRNA下游靶基因1](./md-image/预测microRNA下游靶基因1.png){:width=200 height=200}
 - `mature_mirna_id`mirna名称
 - `database`来自哪个数据库
 - `target_symbol`下游靶基因
@@ -482,8 +481,9 @@ write.table(example_result, file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R
   - `validated`实验验证
   - `predicted`计算机预测
   - `disease.drug`疾病-药物
-筛选并去重：
-```{r}
+
+**筛选并去重**：
+``` r
 # 展示diana_microt数据库中hsa-let-7a-5p的预测结果
 target1 <- example_result %>% 
   filter(
@@ -497,14 +497,13 @@ table(example_result$database);
 table(example_result$mature_mirna_id);
 table(example_result$type);
 ```
-![预测microRNA下游靶基因2](./md-image/预测microRNA下游靶基因2.png){:width=500 height=500}
+![预测microRNA下游靶基因2](./md-image/预测microRNA下游靶基因2.png){:width=400 height=400}
 ### GEO数据库--表达矩阵的间接下载和整理
 进入[GEO官网](https://www.ncbi.nlm.nih.gov/geo/)，搜索`GSE98422`，下载[Series Matrix File(s)](https://ftp.ncbi.nlm.nih.gov/geo/series/GSE98nnn/GSE98422/matrix/)中的两个文件。之前的这个文件都包含表达矩阵，但这个数据集没有（因为文件大小只有几K）
-![其它文件的下载和整理1](./md-image/其它文件的下载和整理1.png){:width=200 height=200}
+![其它文件的下载和整理1](./md-image/其它文件的下载和整理1.png){:width=100 height=100}
 **如何找到表达矩阵**：（两种方法）
 - 将两个`.txt.gz`文件解压，打开，找到`!Sample_supplementary_file_1`的行，根据其中的网址下载
-  ![其它文件的下载和整理4](./md-image/其它文件的下载和整理4.png){:width=200 height=200}
-
+  ![其它文件的下载和整理4](./md-image/其它文件的下载和整理4.png){:width=300 height=300}
 - 在GEO官网中GSE98422的页面，下载[GSE98422_RAW.tar](https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSE98422&format=file)（推荐）
 ![其它文件的下载和整理2](./md-image/其它文件的下载和整理2.png){:width=200 height=200}
   - `http`是全部下载
@@ -514,12 +513,12 @@ table(example_result$type);
   ![其它文件的下载和整理3](./md-image/其它文件的下载和整理3.png){:width=200 height=200}
 
 **样本的临床信息**：储存在上面提到的两个`.txt.gz`中，最好将这3个文件都下载
-```{r}
+``` r
 library(GEOquery);
 library(stringr);
 ```
-临床信息：
-```{r}
+**临床信息**：
+``` r
 gset <- getGEO(
   "GSE98422", 
   destdir = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE98422",
@@ -532,13 +531,12 @@ pd2 <- pData(gset[[2]]);
 # 保存
 write.csv(pd, 'C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE98422\\clinicalGSE98422.1.csv',row.names = TRUE);
 write.csv(pd2, 'C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE98422\\clinicalGSE98422.2.csv', row.names = TRUE);
-
 ```
-![其它文件的下载和整理5](./md-image/其它文件的下载和整理5.png){:width=200 height=200}
-![其它文件的下载和整理6](./md-image/其它文件的下载和整理6.png){:width=200 height=200}
+![其它文件的下载和整理5](./md-image/其它文件的下载和整理5.png){:width=150 height=150}
+![其它文件的下载和整理6](./md-image/其它文件的下载和整理6.png){:width=150 height=150}
 注：这两个临床信息有部分列不同，无法直接合并
-表达矩阵：
-```{r}
+**表达矩阵**：
+``` r
 # 获取全部的表达矩阵文件名
 count_file <- list.files('C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE98422\\GSE98422_RAW\\', pattern = '*.txt', recursive = T);
 # 看看有多少行
@@ -560,9 +558,9 @@ for (i in 1:length(count_file)){
 ![其它文件的下载和整理7](./md-image/其它文件的下载和整理7.png){:width=200 height=200}
 行名是基因id/symbol，`est_counts`是count值，这里我们获取最后一列tpm值作为表达量
 总表达矩阵：
-![其它文件的下载和整理8](./md-image/其它文件的下载和整理8.png){:width=200 height=200}
-获取样本名，将其作为列名：就是`count_file`中`.txt.gz`前面的部分
-```{r}
+![其它文件的下载和整理8](./md-image/其它文件的下载和整理8.png){:width=180 height=180}
+**获取样本名，将其作为列名**：就是`count_file`中`.txt.gz`前面的部分
+``` r
 sample_ids <- c();
 for (i in 1:length(count_file)) {
   sample_id <- strsplit(count_file, "_")[[i]][1];
@@ -571,9 +569,9 @@ for (i in 1:length(count_file)) {
 colnames(matrix) <- sample_ids;
 ```
 ![其它文件的下载和整理9](./md-image/其它文件的下载和整理9.png){:width=200 height=200}
-更改基因名（列名）：
+**更改基因名（列名）**：
 "ENST00000335137.3|ENSG00000186092.4|OTTHUMG00000001094.1|OTTHUMT00000003223.1|OR4F5-001|OR4F5|918|CDS:1-918|"中`OR4F5`是基因名（以`|`分隔的第6项）
-```{r}
+``` r
 matrix$ids <- trimws(
   str_split(
     rownames(matrix),
@@ -582,10 +580,10 @@ matrix$ids <- trimws(
   )[, 6]
 );
 ```
-![其它文件的下载和整理10](./md-image/其它文件的下载和整理10.png){:width=200 height=200}
+![其它文件的下载和整理10](./md-image/其它文件的下载和整理10.png){:width=250 height=250}
 为什么新添加一列`ids`：因为有些基因名重复，重复值无法直接作行名，需要进行去重
-去重（保留最大值）：
-```{r}
+**去重（保留最大值）**：
+``` r
 matrix1 <- aggregate(. ~ ids, data = matrix, max);
 # 更改行名为基因名，并删除ids列
 rownames(matrix1) <- matrix1[, 1];
@@ -600,7 +598,7 @@ write.table(
 ![其它文件的下载和整理11](./md-image/其它文件的下载和整理11.png){:width=200 height=200}
 ### TCGA数据库--大于5G的数据下载
 进入[TCGA官网](https://portal.gdc.cancer.gov/)
-以乳腺癌的转录组表达数据为例：
+**以乳腺癌的转录组表达数据为例**：
 `Cohort Builder`：
 - `Program`--`TCGA`
 - `Project`--`TCGA-BRCA`
@@ -610,12 +608,12 @@ write.table(
 - `Data Type`--`Gene Expression Quantification`
 
 `Add All Files to Cart`加数据添加到仓库，共1231个，5.22GB
-下载三个文件，manifest、metadata和cart
-![大于5G的数据下载1](./md-image/大于5G的数据下载1.png){:width=200 height=200}
+**下载三个文件：manifest、metadata和cart**
+![大于5G的数据下载1](./md-image/大于5G的数据下载1.png){:width=100 height=100}
 ![大于5G的数据下载2](./md-image/大于5G的数据下载2.png){:width=200 height=200}
 下载cart时会弹出提示：
-![大于5G的数据下载3](./md-image/大于5G的数据下载3.png){:width=200 height=200}
-**第一种方法（不推荐，很费时间）**：使用它推荐的`Data Transfer Tool`(gdc-client.exe)下载
+![大于5G的数据下载3](./md-image/大于5G的数据下载3.png){:width=150 height=150}
+**第一种方法（不推荐，下载速度慢，很费时间）**：使用它推荐的`Data Transfer Tool`(gdc-client.exe)下载
 下载好后将它添加到环境变量中，终端输入命令`gdc-client -h`查看是否添加完成
 之后将下载的manifest文件复制到和它的同目录下，在该目录中打开终端，运行命令：
 ``` sh
@@ -624,7 +622,7 @@ gdc-client.exe download -m gdc_manifest.2024-03-01.txt
 其中`gdc_manifest.2024-03-01.txt`是manifest文件名，可能需要修改
 **第二种方法**：使用r获取样本名，之后分批次下载
 只需下载metadata文件即可，之后运行r代码：
-```{r}
+``` r
 library(rjson);
 library(tidyverse);
 # 读入metadata文件
@@ -639,11 +637,12 @@ file_sample2 <- file_sample[(nrow(file_sample)/2):nrow(file_sample)+1, ];
 write.table(file_sample1, 'C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\大于5G的数据下载\\samples1.txt', sep = "\t", quote = F, row.names = F);
 write.table(file_sample2, 'C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\大于5G的数据下载\\samples2.txt', sep = "\t", quote = F, row.names = F);
 ```
+`file_sample2`：
 ![大于5G的数据下载4](./md-image/大于5G的数据下载4.png){:width=200 height=200}
 回到TCGA网页中，点击`Import New Cohort`
 ![大于5G的数据下载5](./md-image/大于5G的数据下载5.png){:width=200 height=200}
 将`samples1.txt`中内容复制粘贴上去，可以看到识别到了615个样本，点击`Submit`
-![大于5G的数据下载6](./md-image/大于5G的数据下载6.png){:width=200 height=200}
+![大于5G的数据下载6](./md-image/大于5G的数据下载6.png){:width=400 height=400}
 取一个名字，这里我取得是`03-03.1`，点击`Save`
 ![大于5G的数据下载7](./md-image/大于5G的数据下载7.png){:width=200 height=200}
 在`Repository`中筛选：
@@ -651,13 +650,13 @@ write.table(file_sample2, 'C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioi
 - `Data Type`--`Gene Expression Quantification`
 
 添加到Cart中，这里只需下载cart文件即可
-![大于5G的数据下载8](./md-image/大于5G的数据下载8.png){:width=200 height=200}
+![大于5G的数据下载8](./md-image/大于5G的数据下载8.png){:width=300 height=300}
 再同样操作下载`samples2.txt`，取名为`03-03.2`
 将下载的两个.tar.gz文件解压，将其中的样本文件夹都集中到一个文件夹内，就与之前一般的数据下载得到的结果相同了（过程中提示有相同的文件名，替换/跳过都可）
-![大于5G的数据下载9](./md-image/大于5G的数据下载9.png){:width=200 height=200}
+![大于5G的数据下载9](./md-image/大于5G的数据下载9.png){:width=350 height=350}
 共有1232个文件（多了一个MANIFEST.txt），正好与之前的1231个文件对应
-之后的处理方式同前：
-```{r}
+**之后的处理方式同前**：
+``` r
 # 读取文件名
 count_file <- list.files(
   'C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\大于5G的数据下载\\file1\\',
@@ -698,23 +697,23 @@ matrix1 <- data.frame(ID = rownames(matrix0), matrix0);
 colnames(matrix1) <- gsub('[.]', '-', colnames(matrix1));
 write.table(matrix1,'C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\大于5G的数据下载\\TPM.txt', sep = "\t", quote = F, row.names = F);
 ```
-![大于5G的数据下载10](./md-image/大于5G的数据下载10.png){:width=200 height=200}
+![大于5G的数据下载10](./md-image/大于5G的数据下载10.png){:width=300 height=300}
 ### 单/多因素cox分析筛选预后相关因素
 ##### 基本方法
 需要数据：生存时间/状态、风险得分、患者信息（年龄、性别、TMN分期、stage分期），其中的所有列需要均为数值型（除了样本名），允许空值存在（TMN分期中X表示空值）
 注：可以在excel中编辑，编辑好后全选，复制粘贴到一个空txt中，不要把.xlsx直接改成.txt
-```{r}
+``` r
 library(survival);
 ```
-读取数据：
-```{r}
+**读取数据**：
+``` r
 cli <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\筛选预后相关因素clinical.txt", header = T, sep = "\t", check.names = F, row.names = 1);
 risk <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\risk.txt", header = T, sep = "\t", check.names = F, row.names = 1);
 ```
 ![筛选预后相关因素1](./md-image/筛选预后相关因素1.png){:width=200 height=200}
-![筛选预后相关因素2](./md-image/筛选预后相关因素2.png){:width=200 height=200}
-进行分析：
-```{r}
+![筛选预后相关因素2](./md-image/筛选预后相关因素2.png){:width=180 height=180}
+**进行分析**：
+``` r
 # 合并两个数据
 merge_data <- function(risk, cli){
   sameSample <- intersect(row.names(cli), row.names(risk));
@@ -846,10 +845,10 @@ multiTab <- indep_multiCox(rt, uniTab,  "C:\\Users\\WangTianHao\\Documents\\GitH
 多因素计算结果`multiTab`：
 ![筛选预后相关因素5](./md-image/筛选预后相关因素5.png){:width=200 height=200}
 单因素绘图结果：
-![筛选预后相关因素6](./md-image/筛选预后相关因素6.png){:width=200 height=200}
+![筛选预后相关因素6](./md-image/筛选预后相关因素6.png){:width=300 height=300}
 可以看到风险得分、Stage分期、T分期的p值<0.05
 多因素绘图结果：
-![筛选预后相关因素7](./md-image/筛选预后相关因素7.png){:width=200 height=200}
+![筛选预后相关因素7](./md-image/筛选预后相关因素7.png){:width=300 height=300}
 可以看到只有风险得分、年龄的p值<0.05
 **区别**：单因素是看单个因素和预后（生存情况）的关系；多因素是看多个因素，验证的是**独立预后因素**。单因素结果中某个因素的p<0.05说明它是一个预后因素，如果该因素在多因素分析中p仍<0.05，就说明它是一个独立预后因素
 为什么M的HR值跨度大：因为M取值基本都为0，值为1的很少，而且空值也很多，不适合作cox分析
@@ -857,7 +856,7 @@ multiTab <- indep_multiCox(rt, uniTab,  "C:\\Users\\WangTianHao\\Documents\\GitH
 ##### 改进
 需要数据：生存时间/状态、风险得分、患者信息（年龄、性别、TN分期、stage分期，没有M列）
 删除有空值的行（含X的值也算空值），只有年龄列是数值型，其它均为字符型(T1/N0/FEMALE/Stage II)
-```{r}
+``` r
 if(!require("autoReg", quietly = T))
 {
   install.packages("autoReg");
@@ -871,8 +870,8 @@ library(survminer);
 library(survival);
 library(forestplot);
 ```
-读取数据，合并：
-```{r}
+**读取数据，合并**：
+``` r
 # 读取
 cli <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\筛选预后相关因素改进clinical.txt", header = T, sep = "\t", check.names = F, row.names = 1);
 risk <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\risk.txt", header = T, sep = "\t", check.names = F, row.names = 1);
@@ -887,9 +886,9 @@ rt <- cbind(
   riskScore = risk[, ncol(risk)-1]
 );
 ```
-![筛选预后相关因素改进1](./md-image/筛选预后相关因素改进1.png){:width=200 height=200}
-更改列类型，并去除空值：将连续变量（年龄、风险得分）设为数值型，其它离散变量设为factor类型
-```{r}
+![筛选预后相关因素改进1](./md-image/筛选预后相关因素改进1.png){:width=180 height=180}
+**更改列类型，并去除空值**：将连续变量（年龄、风险得分）设为数值型，其它离散变量设为factor类型
+``` r
 # 更改列类型
 rt[, 3] <- as.numeric(rt[, 3]);
 rt[, 4] <- factor(rt[, 4]);
@@ -902,9 +901,9 @@ rt <- rt[apply(rt, 1, function(x){
   any(is.na(match('unknow', x)));
 }), , drop=F];
 ```
-![筛选预后相关因素改进2](./md-image/筛选预后相关因素改进2.png){:width=200 height=200}
-构建cox回归模型：
-```{r}
+![筛选预后相关因素改进2](./md-image/筛选预后相关因素改进2.png){:width=170 height=170}
+**构建cox回归模型**：
+``` r
 coxmod <- coxph(Surv(time, state) ~ ., data = rt);
 # 筛选，阈值是threshold，设为1就是全部纳入
 ft3 <- autoReg(coxmod, uni = TRUE, threshold = 0.05);
@@ -912,11 +911,11 @@ ft3 <- autoReg(coxmod, uni = TRUE, threshold = 0.05);
 # 保存
 write.table(ft3, file="C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\multicox_result.txt", sep = "\t", row.names = F, quote = F);
 ```
-![筛选预后相关因素改进3](./md-image/筛选预后相关因素改进3.png){:width=200 height=200}
+![筛选预后相关因素改进3](./md-image/筛选预后相关因素改进3.png){:width=400 height=400}
 结果中`Mean ± SD`的就是连续变量，其它列出具体值的是离散变量。没有HR的就是参照值reference，可以看到每个离散变量的第一个值是参照
 最终Stage、T、riskScore的p<0.05
-多因素cox森林图：
-```{r}
+**多因素cox分析，绘制森林图**：
+``` r
 # 选取p<0.05的因素作cox分析
 multiCox <- coxph(Surv(time, state) ~ Stage + T + riskScore, data = rt);
 multiCoxSum <- summary(multiCox);
@@ -945,60 +944,5 @@ dev.off();
 ![筛选预后相关因素改进4](./md-image/筛选预后相关因素改进4.png){:width=200 height=200}
 其中HR值与上面`ft3`的`HR (multivariable)`是一样的
 森林图：
-![筛选预后相关因素改进5](./md-image/筛选预后相关因素改进5.png){:width=200 height=200}
+![筛选预后相关因素改进5](./md-image/筛选预后相关因素改进5.png){:width=500 height=500}
 图中的N表示样本数，可以看到样本越少，HR值偏差越大
-### 二分类LASSO回归
-之前的LASSO回归是以生存情况为结果进行分析，这次是按控制/治疗分组（也可以是正常/肿瘤、治疗前/后、癌旁/肿瘤、存活/死亡）
-常用于在二分类构建诊断模型后，进行LASSO、随机森林、决策树分析，这三个结果取交集
-需要数据：GSE30219标准化的表达矩阵(normalize.txt)、分组信息(Control.txt/Treat.txt)
-```{r}
-library(glmnet);
-library(limma);
-set.seed(123);  # 随机种子固定结果
-```
-读取数据，分组，提取特定基因：
-提取特定基因：可以是某些特定基因集、差异表达分析结果、单因素cox分析结果等。这里取的是平均表达量>12的前20个基因
-```{r}
-# 读取数据
-data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\normalize.txt", header = T, sep = "\t", check.names = F, row.names = 1);
-Control <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\Control.txt", header = F, sep = "\t", check.names = F);
-Treat <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\Treat.txt", header = F, sep = "\t", check.names = F);
-# 分组
-conNum <- length(rownames(Control));
-treatNum <- length(rownames(Treat));
-Type <- c(rep(1, conNum), rep(2, treatNum));
-# 按照控制-治疗排序
-data1 <- data[, Control[, 1]];
-data2 <- data[, Treat[, 1]];
-data <- cbind(data1, data2);
-# 提取特定基因
-data <- data[rowMeans(data)>12, ];
-data <- data[c(1:20), ];
-```
-![二分类LASSO回归1](./md-image/二分类LASSO回归1.png){:width=200 height=200}
-构建模型进行分析：
-```{r}
-x <- as.matrix(t(data));
-y <- Type;
-fit <- glmnet(x, y, family = "binomial");  # 注意binomial代表二分类
-cvfit <- cv.glmnet(x, y, family = "binomial", nfolds = 10);
-# 绘制交叉验证曲线
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\binomial_cvfit.pdf", width = 6, height = 5.5);
-plot(cvfit);
-dev.off();
-# 根据分析结果筛选特征基因
-coef <- coef(fit, s = cvfit$lambda.min);
-index <- which(coef != 0);
-lassoGene <- row.names(coef)[index];
-lassoGene <- lassoGene[-1];
-# 保存特征基因的表达矩阵
-lassoGene_exp <- data.frame(
-  ID = rownames(data[lassoGene, ]),
-  data[lassoGene,]
-);
-write.table(lassoGene_exp, file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\LASSO.gene.exp.txt", sep = "\t", quote = F, row.names = F, col.names = T
-);
-```
-![二分类LASSO回归2](./md-image/二分类LASSO回归2.png){:width=200 height=200}
-共获取到了11个特征基因
-![二分类LASSO回归3](./md-image/二分类LASSO回归3.png){:width=200 height=200}
