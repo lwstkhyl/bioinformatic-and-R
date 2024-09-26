@@ -223,6 +223,7 @@ colnames(save_df) <- gsub('[.]', '-', colnames(save_df));
 write.table(save_df, 'C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\甲基化数据\\methylation.450.txt', sep = "\t", quote = F, row.names = F);
 ```
 ![TCGA甲基化数据下载和整理4](./md-image/TCGA甲基化数据下载和整理4.png){:width=220 height=220}
+行名（id列）是探针id，列名是样本名，数据值从0到1代表甲基化程度增加（1为完全甲基化，0是完全没有甲基化
 
 ---
 

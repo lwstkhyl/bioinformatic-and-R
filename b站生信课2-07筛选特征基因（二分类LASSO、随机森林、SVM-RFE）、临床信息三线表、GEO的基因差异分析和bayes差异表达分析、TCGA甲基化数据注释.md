@@ -16,13 +16,14 @@
 - [临床信息三线表](#临床信息三线表)
 - [GEO的Bayes差异表达分析](#geo的bayes差异表达分析)
 - [GEO基因差异分析](#geo基因差异分析)
+- [TCGA甲基化数据注释](#tcga甲基化数据注释)
 
 <!-- /code_chunk_output -->
 
 <!-- 打开侧边预览：f1->Markdown Preview Enhanced: open...
 只有打开侧边预览时保存才自动更新目录 -->
 
-写在前面：本篇教程来自b站课程[TCGA及GEO数据挖掘入门必看](https://www.bilibili.com/video/BV1b34y1g7RM) P56-P
+写在前面：本篇教程来自b站课程[TCGA及GEO数据挖掘入门必看](https://www.bilibili.com/video/BV1b34y1g7RM) P56-P62
 
 ### 二分类LASSO回归
 之前的LASSO回归是以生存情况为结果进行分析，这次是按控制/治疗分组（也可以是正常/肿瘤、治疗前/后、癌旁/肿瘤、存活/死亡）
@@ -82,7 +83,7 @@ write.table(lassoGene_exp, file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-
 ### 随机森林筛选特征基因
 将多个决策树结合在一起，每次数据集是随机有放回的选出，同时随机选出部分特征作为输入
 需要数据：GSE30219表达矩阵、分组信息(Control.txt/Treat.txt)、差异表达分析结果(diff.Wilcoxon.txt)（用于选择特征基因进行筛选）
-```{r}
+``` r
 if(!require("randomForest", quietly = T))
 {
   install.packages("randomForest");
@@ -101,7 +102,7 @@ write.table(data.frame(ID = rownames(data), data), file = "C:\\Users\\WangTianHa
 ```
 **读取数据，分组，提取差异基因进行分析**：
 提取特定基因：可以是某些特定基因集、差异表达分析结果、单因素cox分析结果等。这里取的是fdr最小的20个基因
-```{r}
+``` r
 data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\normalize.txt", header = T, sep = "\t", check.names = F, row.names = 1);
 Control <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\Control.txt", header = F, sep = "\t", check.names = F);
 Treat <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\Treat.txt", header = F, sep = "\t", check.names = F);
@@ -121,7 +122,7 @@ data = data[rownames(genes)[1:20], ];
 ```
 ![随机森林筛选特征基因1](./md-image/随机森林筛选特征基因1.png){:width=180 height=180}
 **构建森林**：
-```{r}
+``` r
 x <- as.matrix(t(data));
 y <- Type;
 rf <- randomForest(as.factor(y) ~ ., data = x, ntree = 500);
@@ -132,7 +133,7 @@ dev.off();
 ![随机森林筛选特征基因2](./md-image/随机森林筛选特征基因2.png){:width=400 height=400}
 横坐标代表有多少个决策树，纵坐标代表误差，图下部绿色的代表对照组，上部红色代表实验组，要选取的是黑色线（误差）最小的树
 **基因的重要性图**：
-```{r}
+``` r
 # 找出误差最小的点
 optionTrees <- which.min(rf$err.rate[, 1]);
 rf2 <- randomForest(as.factor(y) ~ ., data = x, ntree = optionTrees);
@@ -146,7 +147,7 @@ dev.off();
 ![随机森林筛选特征基因3](./md-image/随机森林筛选特征基因3.png){:width=400 height=400}
 横坐标代表重要性，纵坐标代表不同基因，一般选取重要性最高的前几个或重要性大于多少的基因
 **筛选特征基因，并保存它们的表达矩阵**：
-```{r}
+``` r
 rfGenes <- importance[order(importance[, "MeanDecreaseGini"], decreasing = TRUE), ];
 # 重要性评分大于2的基因
 rfGenes <- names(rfGenes[rfGenes>2])  ;
@@ -160,7 +161,7 @@ write.table(data.frame(ID = rownames(sigExp), sigExp), file = "C:\\Users\\WangTi
 ### SVM-RFE筛选特征基因
 支持向量机-递归特征消除(support vector machine-recursive feature elimination, SVM-RFE)是基于支持向量机的机器学习方法，通过删减SVM产生的特征向量来寻找最佳变量
 需要数据：上面得到的GSE30219标准化表达矩阵、分组信息(Control.txt/Treat.txt)、差异表达分析结果(diff.Wilcoxon.txt)（用于选择特征基因进行筛选）
-```{r}
+``` r
 if(!require("kernlab", quietly = T))
 {
   install.packages("kernlab");
@@ -173,7 +174,7 @@ set.seed(123);  # 随机种子固定结果
 ```
 **读取数据，分组，提取差异基因进行分析**：（同上面随机森林筛选）
 提取特定基因：可以是某些特定基因集、差异表达分析结果、单因素cox分析结果等。这里取的是logFC绝对值最大的前30个基因
-```{r}
+``` r
 data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\normalize.txt", header = T, sep = "\t", check.names = F, row.names = 1);
 Control <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\Control.txt", header = F, sep = "\t", check.names = F);
 Treat <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\Treat.txt", header = F, sep = "\t", check.names = F);
@@ -194,7 +195,7 @@ data <- data[rownames(genes)[1:30], ];
 ![SVMRFE筛选特征基因1](./md-image/SVMRFE筛选特征基因1.png){:width=180 height=180}
 **SVM-RFE分析并绘图**：
 注：运行时间可能很长（30min-1h左右）
-```{r}
+``` r
 # SVM-RFE分析
 x <- t(data);
 y <- as.numeric(as.factor(Type));
@@ -225,7 +226,7 @@ dev.off();
 ![SVMRFE筛选特征基因2](./md-image/SVMRFE筛选特征基因2.png){:width=400 height=400}
 横坐标是特征数量（或者说是基因数），纵坐标是交叉验证的误差，需要选取误差值最小的基因数，可以看到当N=3（基因数为3）的时候最合适
 **筛选特征基因，并保存它们的表达矩阵**：
-```{r}
+``` r
 # 特征基因
 featureGenes <- Profile$optVariables;
 # 表达矩阵
@@ -243,7 +244,7 @@ write.table(
 第一列是临床特征名称，第二列是每个特征有哪些分类，之后是各分类在全部/第一组/第二组中的样本数及占比，后面的p值代表该特征在两组中的差异是否显著。一般来讲，我们希望临床特征在两组中没有统计学差异(p>0.05)且p值越接近1越好，因为我们想要的是治疗影响两组的数据，而不是临床特征对两组产生影响，因此两组越相似越好
 使用的临床特征数据：允许空值，包含样本名、Age、Gender、T、N、M、Stage、Subdivision列，其中只有年龄列是数值型，其它均为字符型(T1/N0/M0/FEMALE/Stage II)，Subdivision列取值为Bronchial、L-Lower、L-Upper、R-Lower、R-Middle、R-Upper、unknow
 **读取数据并分组**：
-```{r}
+``` r
 clinical <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\临床信息三线表clinical.txt", header = T, sep = "\t", check.names = F, row.names = 1);
 # 将年龄按>60和<=60分组（将数据都变成离散变量）
 clinical[, "Age"] <- ifelse(
@@ -269,7 +270,7 @@ group12clinical <- rbind(group1clinical, group2clinical);
 ```
 ![临床信息三线表2](./md-image/临床信息三线表2.png){:width=180 height=180}
 **计算p值**：
-```{r}
+``` r
 cliStatOut <- data.frame();
 for(i in 1:(ncol(group12clinical)-1)){
   nameStat <- colnames(group12clinical)[i];
@@ -302,12 +303,12 @@ write.table(cliStatOut, file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for
 之前的GEO差异表达分析使用的是wilcox方法，要求每组的样本量数量多，如果两组样本数差异过大，就不适合wilcox方法
 这里我们使用Bayes方法，适合于样本数没有那么多，且是tpm数据/芯片数据的情况
 需要数据：之前得到的GSE30219标准化表达矩阵、分组信息(Control.txt/Treat.txt)
-```{r}
+``` r
 library(limma);
 library(pheatmap);
 ```
 **读取数据、合并、分组**：
-```{r}
+``` r
 # 读取数据
 data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\normalize.txt", header = T, sep = "\t", check.names = F, row.names = 1);
 Control <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\Control.txt", header = F, sep = "\t", check.names = F);
@@ -328,7 +329,7 @@ colnames(design) <- c("con", "treat");
 `design`：
 ![GEO的Bayes差异表达分析2](./md-image/GEO的Bayes差异表达分析2.png){:width=200 height=200}
 **差异分析**：
-```{r}
+``` r
 fit <- lmFit(data, design);
 cont.matrix<-makeContrasts(treat-con, levels = design);
 fit2 <- contrasts.fit(fit, cont.matrix);
@@ -344,7 +345,7 @@ write.table(
 ```
 ![GEO的Bayes差异表达分析3](./md-image/GEO的Bayes差异表达分析3.png){:width=200 height=200}
 **筛选**：
-```{r}
+``` r
 # 筛选标准
 logFCfilter <- 1;
 adj.P.Val.Filter <- 0.05;
@@ -368,7 +369,7 @@ write.table(
 `diffGeneExp`：
 ![GEO的Bayes差异表达分析5](./md-image/GEO的Bayes差异表达分析5.png){:width=170 height=170}
 **热图和火山图**：类似于之前的差异分析
-```{r}
+``` r
 # 热图
 geneNum <- 50;  # 要展示的基因数量     
 diffSig <- diffSig[order(as.numeric(as.vector(diffSig$logFC))), ];  # 按logFC排序
@@ -442,7 +443,7 @@ dev.off();
 ### GEO基因差异分析
 差异表达分析往往以logFC/修正后p值/fdr进行筛选，而基因差异分析一般只以p值为筛选条件，阈值的标准比较低，画箱线图，图中的基因可以不是差异基因，而上面画的图都是差异基因
 需要数据：之前得到的GSE30219标准化表达矩阵、分组信息(Control.txt/Treat.txt)
-```{r}
+``` r
 if(!require("ggthemes", quietly = T))
 {
   install.packages("ggthemes");
@@ -458,7 +459,7 @@ library(reshape2);
 library(ggpubr);
 ```
 **读取数据，分组，合并**：
-```{r}
+``` r
 # 读取数据
 data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\normalize.txt", header = T, sep = "\t", check.names = F, row.names = 1);
 Control <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\Control.txt", header = F, sep = "\t", check.names = F);
@@ -481,7 +482,7 @@ Type <- c(rep("Control", conNum), rep("Treat", treatNum));
 ```
 ![基因差异分析1](./md-image/基因差异分析1.png){:width=200 height=200}
 **差异分析**：
-```{r}
+``` r
 # 提取自己感兴趣的基因，单个基因也可
 data <- data[1:100, ];  # 这里以前100个基因为例
 # data <- data["A1BG", , drop=F];  # 如果是单个基因要加drop=F
@@ -521,7 +522,7 @@ write.table(
 ![基因差异分析2](./md-image/基因差异分析2.png){:width=180 height=180}
 在前100个基因中共选出64个差异基因
 **箱线图**：
-```{r}
+``` r
 exp <- as.data.frame(t(exp));
 # 是否仅展示p<0.05的基因（这里全部展示了）
 # exp <- exp[, sigGeneVec];
@@ -554,3 +555,58 @@ dev.off();
 ```
 ![基因差异分析3](./md-image/基因差异分析3.png){:width=400 height=400}
 纵坐标是表达量，横坐标是基因名，分组是按控制/治疗，上面的星号标识了是否有统计学差异
+### TCGA甲基化数据注释
+使用上一篇中TCGA甲基化数据下载和整理得到的甲基化数据`methylation.450.txt`
+安装包`ChAMP`：因为这个包的依赖很大，使用`BiocManager`安装很容易中断，可以先将`ChAMPdata`、`geneLenDataBase`、`IlluminaHumanMethylationEPICanno.ilm10b4.hg19`这几个依赖在bioconductor网站下载到本地进行安装，之后再运行`BiocManager::install("ChAMP")`
+``` r
+if(!require("minfi", quietly = T))
+{
+  BiocManager::install("minfi");
+}
+if(!require("ChAMP", quietly = T))
+{
+  BiocManager::install("ChAMP");
+}
+library(stringr);
+library(tidyverse);
+library(ChAMP);
+library(data.table);
+```
+**获取注释信息**：
+``` r
+myimport <- champ.import(
+  directory = system.file("extdata", package = "ChAMPdata")
+);
+myfilter <- champ.filter(
+  beta = myimport$beta,
+  pd = myimport$pd,
+  detP = myimport$detP,
+  beadcount = myimport$beadcount
+);
+```
+![TCGA甲基化数据注释1](./md-image/TCGA甲基化数据注释1.png){:width=200 height=200}
+行名是探针id，`gene`列是基因名（注释信息），其它例如feature、CHR列都是标识探针的分类，如果想专门对某类基因进行研究，就根据这些列进行筛选
+**读入甲基化数据，进行注释**：
+``` r
+# 读入甲基化数据
+rt <- fread("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\甲基化数据\\methylation.450.txt");
+rt <- column_to_rownames(rt, var = "ID");
+# 获取探针对应的基因名
+annotation123 <- probe.features[rownames(rt), ];
+# 合并
+rt <- cbind(rt, annotation123$gene);
+```
+![TCGA甲基化数据注释2](./md-image/TCGA甲基化数据注释2.png){:width=250 height=250}
+行名是探针名，列名是样本名，最后一列是添加的基因名注释
+**去重，整理数据**：
+``` r
+# 去除重复基因，保留最大值
+rt <- aggregate(. ~ annotation123$gene, data = rt, max);
+# 删除第一行、最后一列（无用值）
+rt <- rt[-1, -length(colnames(rt))];
+# 改列名
+colnames(rt)[1] <- "gene";
+# 保存
+write.table(rt, 'C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\甲基化数据\\450.txt', sep = "\t", quote = F, row.names = F);
+```
+![TCGA甲基化数据注释3](./md-image/TCGA甲基化数据注释3.png){:width=250 height=250}
