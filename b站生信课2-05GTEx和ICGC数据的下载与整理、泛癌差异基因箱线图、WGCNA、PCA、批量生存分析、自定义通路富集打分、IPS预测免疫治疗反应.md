@@ -56,7 +56,7 @@ library(tinyarray);
 ```
 **读取tpm表达矩阵**：
 ``` r
-dat <- data.table::fread("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GTEx\\gtex_RSEM_gene_tpm.gz", data.table = F);  # 读入
+dat <- data.table::fread("data\\GTEx\\gtex_RSEM_gene_tpm.gz", data.table = F);  # 读入
 exp <- column_to_rownames(dat, "sample") %>%  # 将第一列sample转化行名
   as.matrix();
 rownames(exp) <- rownames(exp) %>% 
@@ -69,7 +69,7 @@ exp <- trans_array(exp, ids = an, from = "ENSEMBL", to = "SYMBOL");  # 转换行
 此时`exp`表达矩阵包含所有的样本
 **读取临床数据**：
 ``` r
-clinical <- data.table::fread("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GTEx\\GTEX_phenotype.gz");  # 读入
+clinical <- data.table::fread("data\\GTEx\\GTEX_phenotype.gz");  # 读入
 clinical <- clinical[clinical$`_primary_site`!="<not provided>", ];  # 删除未知补位的样本
 colnames(clinical)[3] <- "site";  # 修改列名
 clinical.subset <- subset(clinical, site=="Lung");  # 获取指定部位（肺部）的样本
@@ -83,7 +83,7 @@ exp <- exp[,s];  # 提取
 # 因为XENA的数据是经过log2(tpm+0.001)处理的，需要转化回来
 exp <- round(2^exp-0.001, 4);  # 保留小数点后四位
 # 保存数据
-write.table(data.frame(ID = rownames(exp), exp), file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\Lung.txt", sep = "\t", quote = F, row.names = F);
+write.table(data.frame(ID = rownames(exp), exp), file = "save_data\\Lung.txt", sep = "\t", quote = F, row.names = F);
 ```
 ![GTEx数据下载和整理7](./md-image/GTEx数据下载和整理7.png){:width=220 height=220}
 列名是样本名，行名是基因名，数据值是表达量
@@ -128,7 +128,7 @@ library(WGCNA);
 
 ``` r
 # 表达矩阵
-data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA_LUSC_TPM.txt", header = T, sep = "\t", check.names = F,row.names = 1);
+data <- read.table("save_data\\TCGA_LUSC_TPM.txt", header = T, sep = "\t", check.names = F,row.names = 1);
 dimnames <- list(rownames(data), colnames(data));
 data <- matrix(as.numeric(as.matrix(data)), nrow = nrow(data), dimnames = dimnames);
 # 仅保留肿瘤样本
@@ -143,7 +143,7 @@ colnames(data) <- gsub('[.]', '-', colnames(data));
 data <- data[rowMeans(data)>0.5, ];
 # 临床数据
 library("readxl");
-cli <- read_excel("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\clinical.xlsx");
+cli <- read_excel("save_data\\clinical.xlsx");
 cli <- column_to_rownames(cli, "bcr_patient_barcode");  # 样本名为行名
 cli <- cli[, c("gender", "vital_status", "T")];  # 只保留性别、生存状态、T分期列
 colnames(cli) <- c("Sex", "State", "T");  # 改列名
@@ -155,7 +155,7 @@ sameSample <- intersect(row.names(cli), colnames(data));
 cli <- cli[sameSample, ];
 data <- data[, sameSample];
 # 保存处理后的临床数据
-write.table(data.frame(ID = rownames(cli), cli), "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\WGCNA_cli.txt", sep = '\t', quote = F, row.names = F);
+write.table(data.frame(ID = rownames(cli), cli), "save_data\\WGCNA_cli.txt", sep = '\t', quote = F, row.names = F);
 ```
 ![WGCNA2](./md-image/WGCNA2.png){:width=200 height=200}
 ![WGCNA1](./md-image/WGCNA1.png){:width=200 height=200}
@@ -191,7 +191,7 @@ if (!gsg$allOK){
 ``` r
 sampleTree <- hclust(dist(datExpr0), method = "average");
 # 画图1
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\1_sample_cluster.1.pdf", width = 12, height = 9);
+pdf(file = "save_data\\1_sample_cluster.1.pdf", width = 12, height = 9);
 par(cex = 0.6);
 par(mar = c(0,4,2,0));
 plot(
@@ -209,7 +209,7 @@ dev.off();
 ``` r
 cutHeight <- 100000;  # 剪切值
 # 画图2（剪切线）
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\1_sample_cluster.2.pdf", width = 12, height = 9);
+pdf(file = "save_data\\1_sample_cluster.2.pdf", width = 12, height = 9);
 par(cex = 0.6);
 par(mar = c(0,4,2,0));
 plot(
@@ -232,7 +232,7 @@ datExpr0 <- datExpr0[keepSamples, ];
 enableWGCNAThreads();  # 多线程工作
 powers <- c(1:20);  # 幂指数范围1:20
 sft <- pickSoftThreshold(datExpr0, powerVector = powers, verbose = 5);
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\2_scale_independence.pdf", width = 9, height = 5);
+pdf(file = "save_data\\2_scale_independence.pdf", width = 9, height = 5);
 par(mfrow = c(1, 2));
 cex1 <- 0.9;  # 可以修改，如改成0.8
 # 拟合指数与power值散点图，无标度拓扑拟合指数
@@ -300,7 +300,7 @@ TOM <- TOMsimilarity(adjacency);
 dissTOM <- 1-TOM;
 # 基因聚类
 geneTree <- hclust(as.dist(dissTOM), method = "average");
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\3_gene_clustering.pdf", width = 12, height = 9);
+pdf(file = "save_data\\3_gene_clustering.pdf", width = 12, height = 9);
 plot(
   geneTree, 
   xlab = "", sub = "", main = "Gene clustering on TOM-based dissimilarity",
@@ -322,7 +322,7 @@ dynamicMods <- cutreeDynamic(
   minClusterSize = minModuleSize
 );
 dynamicColors <- labels2colors(dynamicMods);
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\4_Dynamic_Tree.pdf", width = 8, height = 6);
+pdf(file = "save_data\\4_Dynamic_Tree.pdf", width = 8, height = 6);
 plotDendroAndColors(
   geneTree, 
   dynamicColors, 
@@ -343,7 +343,7 @@ MEList <- moduleEigengenes(datExpr0, colors = dynamicColors);
 MEs <- MEList$eigengenes;
 MEDiss <- 1-cor(MEs);
 METree <- hclust(as.dist(MEDiss), method = "average");
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\5_Clustering_module.pdf", width = 7, height = 7);
+pdf(file = "save_data\\5_Clustering_module.pdf", width = 7, height = 7);
 plot(
   METree, 
   main = "Clustering of module eigengenes", xlab = "", sub = ""
@@ -364,7 +364,7 @@ merge <- mergeCloseModules(
 );
 mergedColors <- merge$colors;
 mergedMEs <- merge$newMEs;
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\6_merged_dynamic.pdf", width = 8, height = 6);
+pdf(file = "save_data\\6_merged_dynamic.pdf", width = 8, height = 6);
 plotDendroAndColors(
   geneTree, 
   mergedColors,
@@ -388,7 +388,7 @@ MEs <- mergedMEs;
 **提取共有样本**：
 ``` r
 # 重新读入临床数据
-cli2 <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\WGCNA_cli.txt", header = T, sep = "\t", check.names = F, row.names = 1);
+cli2 <- read.table("save_data\\WGCNA_cli.txt", header = T, sep = "\t", check.names = F, row.names = 1);
 # 提取共有样本
 sameSample2 <- intersect(row.names(cli2), rownames(MEs));
 MEs <- MEs[sameSample2,];
@@ -398,7 +398,7 @@ nSamples <- nrow(datExpr0);
 # 相关性分析
 moduleTraitCor <- cor(MEs, datTraits, use = "p");
 moduleTraitPvalue <- corPvalueStudent(moduleTraitCor, nSamples);
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\7_Module_trait.pdf", width = 6.5, height = 5.5);
+pdf(file = "save_data\\7_Module_trait.pdf", width = 6.5, height = 5.5);
 textMatrix <- paste(  # 不能用paste0
   signif(moduleTraitCor, 2), 
   "\n(", signif(moduleTraitPvalue, 1), ")", 
@@ -433,7 +433,7 @@ geneInfo0 <- data.frame(
 );
 geneOrder <- order(geneInfo0$moduleColor);
 geneInfo <- geneInfo0[geneOrder, ];
-write.table(geneInfo, file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\module_all.txt", sep = "\t", row.names = F, quote = F);
+write.table(geneInfo, file = "save_data\\module_all.txt", sep = "\t", row.names = F, quote = F);
 # 每个模块的基因
 for (mod in 1:nrow(table(moduleColors))){  
   modules <- names(table(moduleColors))[mod];
@@ -442,7 +442,7 @@ for (mod in 1:nrow(table(moduleColors))){
   modGenes <- probes[inModule];
   write.table(
     modGenes, 
-    file = paste0("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\module_", modules, ".txt"),
+    file = paste0("save_data\\module_", modules, ".txt"),
     sep = "\t", row.names = F, col.names = F, quote = F
   );
 }
@@ -475,7 +475,7 @@ names(GSPvalue) <- paste("p.GS.", names(Selectedclinical), sep = "");
 #画图
 column <- match(module, modNames);
 moduleGenes <- moduleColors==module;
-outPdf <- paste("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\", Selectedclinical2, "_", module, ".pdf", sep = "");
+outPdf <- paste("save_data\\", Selectedclinical2, "_", module, ".pdf", sep = "");
 pdf(file = outPdf, width = 7, height = 7);
 verboseScatterplot(
   abs(geneModuleMembership[moduleGenes, column]),
@@ -509,7 +509,7 @@ datMM <- datMM[abs(datMM[, 1])>moduleSigFilter, ];
 # 导出
 write.table(
   row.names(datMM), 
-  file = paste0("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\hubGenes", module, ".txt"),
+  file = paste0("save_data\\hubGenes", module, ".txt"),
   sep = "\t", row.names = F, col.names = F, quote = F
 );
 ```
@@ -530,7 +530,7 @@ library(scatterplot3d);
 ```
 **读取数据**：
 ``` r
-rt <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\risk.txt", header = T, sep = "\t", check.names = F, row.names = 1);
+rt <- read.table("save_data\\risk.txt", header = T, sep = "\t", check.names = F, row.names = 1);
 risk <- as.vector(rt$risk);  # 高/低风险组
 data <- rt[, 3:(ncol(rt)-2)];  # 各样本的各基因表达量
 ```
@@ -549,7 +549,7 @@ PCA <- data.frame(
 );
 PCA.mean <- aggregate(PCA[, 1:2], list(risk = PCA$risk), mean);
 # 2d图
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\PCA.2d.pdf", width = 5.5, height = 4.75);
+pdf(file = "save_data\\PCA.2d.pdf", width = 5.5, height = 4.75);
 ggplot(data = PCA, aes(PC1, PC2)) + 
   geom_point(aes(color = risk, shape = risk)) +
   scale_colour_manual(
@@ -576,7 +576,7 @@ ggplot(data = PCA, aes(PC1, PC2)) +
 dev.off();
 # 3d图
 color <- ifelse(risk=="high", "DarkOrchid", "Orange2");
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\PCA.3d.pdf", width = 7, height = 7);
+pdf(file = "save_data\\PCA.3d.pdf", width = 7, height = 7);
 par(oma = c(1, 1, 2.5, 1));
 s3d <- scatterplot3d(
   pcaPredict[, 1:3], 
@@ -608,7 +608,7 @@ library(survminer);
 **读取tpm表达矩阵、生存信息，合并**：
 ``` r
 # 表达矩阵
-data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA_LUSC_TPM.txt", header = T, sep = "\t", check.names = F,row.names = 1);
+data <- read.table("save_data\\TCGA_LUSC_TPM.txt", header = T, sep = "\t", check.names = F,row.names = 1);
 dimnames <- list(rownames(data), colnames(data));
 data <- matrix(as.numeric(as.matrix(data)), nrow = nrow(data), dimnames = dimnames);
 # 去除低表达的基因
@@ -624,7 +624,7 @@ colnames(data) <- gsub('[.]', '-', colnames(data));
 # 转置
 data <- t(data);
 # 临床数据
-cli <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\time_LUSC.txt", header = T, sep = "\t", check.names = F, row.names = 1);
+cli <- read.table("save_data\\time_LUSC.txt", header = T, sep = "\t", check.names = F, row.names = 1);
 cli$time <- cli$time/365;
 # 合并
 sameSample <- intersect(row.names(data), row.names(cli));
@@ -669,13 +669,13 @@ for(gene in colnames(rt[, 3:(2+geneNum)])){
       cumevents = F,
       risk.table.height = .25
     );	
-    pdf(file = paste0("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\sur.", gene, ".pdf"), width = 7, height = 6.5, onefile = FALSE);
+    pdf(file = paste0("save_data\\sur.", gene, ".pdf"), width = 7, height = 6.5, onefile = FALSE);
     print(surPlot);
     dev.off();
   }
 }
 # 保存基因其对应和p值
-write.table(outTab, file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\surv_result.txt", sep = "\t", row.names = F, quote = F); 
+write.table(outTab, file = "save_data\\surv_result.txt", sep = "\t", row.names = F, quote = F); 
 ```
 ![批量生存分析2](./md-image/批量生存分析2.png){:width=150 height=150}
 可以看到在前50个基因中，共筛选出5个生存时间在高/低表达组有显著差异的基因
@@ -707,9 +707,9 @@ library(tidyverse);
 **读取表达矩阵和分组信息**：
 ``` r
 # 表达矩阵
-exp <- read_delim(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\ICGC数据\\exp_seq.all_projects.specimen.USonly.xena.tsv", delim = "\t", col_names = TRUE);
+exp <- read_delim(file = "data\\ICGC数据\\exp_seq.all_projects.specimen.USonly.xena.tsv", delim = "\t", col_names = TRUE);
 # 分组信息
-cli <- read_delim(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\ICGC数据\\specimen.all_projects.tsv", delim = "\t", col_names = TRUE);
+cli <- read_delim(file = "data\\ICGC数据\\specimen.all_projects.tsv", delim = "\t", col_names = TRUE);
 cli <- select(cli, c("specimen_type", "project_code"));
 ```
 表达矩阵：
@@ -751,7 +751,7 @@ tumorexp <- exp[, tumornames];
 ``` r
 rt <- cbind(exp[, 1, drop = F], normalexp, tumorexp);
 rt <- rt[-1, ];  # 删除第一行（基因名为?的那一行，是无用信息）
-write.table(rt, 'C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\ICGC数据\\matrix.txt', sep = "\t", quote = F, row.names = F);
+write.table(rt, 'data\\ICGC数据\\matrix.txt', sep = "\t", quote = F, row.names = F);
 ```
 ![ICGC数据下载和整理8](./md-image/ICGC数据下载和整理8.png){:width=180 height=180}
 总共22+451+1=474列（正常+肿瘤+基因名），列名是样本名，行名（第一列）是基因名，数据是各基因在各样本中的表达量
@@ -762,11 +762,11 @@ library(tidyverse);
 **读取临床信息和表达矩阵，合并**：
 ``` r
 # 临床信息
-cli <- read_delim(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\ICGC数据\\donor.all_projects.overallSurvival_transfer_specimen", delim = "\t", col_names = TRUE);
+cli <- read_delim(file = "data\\ICGC数据\\donor.all_projects.overallSurvival_transfer_specimen", delim = "\t", col_names = TRUE);
 cli <- as.data.frame(cli);
 rownames(cli) <- cli[, 1];  # 行名为样本名
 # 表达矩阵
-data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\ICGC数据\\matrix.txt", header = T, sep = "\t", check.names = F, row.names = 1);
+data <- read.table("data\\ICGC数据\\matrix.txt", header = T, sep = "\t", check.names = F, row.names = 1);
 # 合并
 samesample <- intersect(rownames(cli), colnames(data));
 cli.samesample <- cli[samesample, ];
@@ -782,7 +782,7 @@ write.table(
     ID = rownames(cli.samesample),
     cli.samesample
   ),
-  file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\ICGC数据\\clinical.time.txt", 
+  file = "data\\ICGC数据\\clinical.time.txt", 
   sep = "\t", quote = F, row.names = F, col.names = T
 );
 ```
@@ -802,14 +802,14 @@ library(readxl);
 **读取表达矩阵和基因集**：
 ``` r
 # 表达矩阵
-data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA_LUSC_TPM.txt", header = T, sep = "\t", check.names = F,row.names = 1);
+data <- read.table("save_data\\TCGA_LUSC_TPM.txt", header = T, sep = "\t", check.names = F,row.names = 1);
 dimnames <- list(rownames(data), colnames(data));
 data <- matrix(as.numeric(as.matrix(data)), nrow = nrow(data), dimnames = dimnames);
 # 基因集
-geneSets_xlsx <- read_excel("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\genesets.xlsx", col_names = F);
+geneSets_xlsx <- read_excel("data\\genesets.xlsx", col_names = F);
 # 转为gmt文件，并读取
-write.table(geneSets_xlsx, file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\my_genesets.gmt", sep = "\t", row.names = F, col.names = F, quote = F);
-geneSets <- getGmt("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\my_genesets.gmt", geneIdType = SymbolIdentifier());
+write.table(geneSets_xlsx, file = "save_data\\my_genesets.gmt", sep = "\t", row.names = F, col.names = F, quote = F);
+geneSets <- getGmt("save_data\\my_genesets.gmt", geneIdType = SymbolIdentifier());
 ```
 ![自定义通路富集打分2](./md-image/自定义通路富集打分2.png){:width=350 height=350}
 **打分并标准化**：
@@ -822,7 +822,7 @@ normalize <- function(x){return((x-min(x))/(max(x)-min(x)));}
 gsvaResult <- normalize(gsvaResult);
 # 保存
 gsvaOut <- rbind(id = colnames(gsvaResult), gsvaResult);
-write.table(gsvaOut, file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\ssgseaOut2.txt", sep = "\t", quote = F, col.names = F);
+write.table(gsvaOut, file = "save_data\\ssgseaOut2.txt", sep = "\t", quote = F, col.names = F);
 ```
 ![自定义通路富集打分3](./md-image/自定义通路富集打分3.png){:width=220 height=220}
 这是不同的样本在三个自定义通路中的得分情况
@@ -898,7 +898,7 @@ boxplot <- ggboxplot(
     legend.title = element_text(face = "bold.italic", size = 13)
   );
 # 输出图片
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\ggboxplot.pdf", width = 8, height = 6);
+pdf(file = "save_data\\ggboxplot.pdf", width = 8, height = 6);
 print(boxplot);
 dev.off();
 ```
@@ -920,10 +920,10 @@ library(ggpubr);
 **读取临床数据和表达矩阵，合并**：
 ``` r
 # 临床数据
-tcia <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\TCIA-ClinicalData.tsv", header = T, sep = "\t", check.names = F, row.names = 1);
+tcia <- read.table("data\\TCIA-ClinicalData.tsv", header = T, sep = "\t", check.names = F, row.names = 1);
 tcia <- tcia[, c("ips_ctla4_neg_pd1_neg", "ips_ctla4_neg_pd1_pos", "ips_ctla4_pos_pd1_neg", "ips_ctla4_pos_pd1_pos")];  # 仅选取这4列与免疫抑制剂相关的
 # 表达矩阵
-data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA_LUSC_TPM.txt", header = T, sep = "\t", check.names = F, row.names = 1);
+data <- read.table("save_data\\TCGA_LUSC_TPM.txt", header = T, sep = "\t", check.names = F, row.names = 1);
 # 仅保留肿瘤样本
 group <- sapply(strsplit(colnames(data), "\\-"), "[", 4);
 group <- sapply(strsplit(group,""), "[", 1);
@@ -987,7 +987,7 @@ violin <- ggviolin(
     legend.title = element_text(face = "bold.italic", size = 13)
   );
 # 输出
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\ggviolin_ips.pdf", width = 8, height = 7);
+pdf(file = "save_data\\ggviolin_ips.pdf", width = 8, height = 7);
 print(violin);
 dev.off();
 ```
@@ -1011,7 +1011,7 @@ library(reshape2);
 **读入表达矩阵，并进行ips分析**：
 ``` r
 # 表达矩阵
-data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE74777\\GSE74777.txt", header = T, sep = "\t", check.names = F, row.names = 1);
+data <- read.table("data\\GSE74777\\GSE74777.txt", header = T, sep = "\t", check.names = F, row.names = 1);
 # 标准化
 data <- normalizeBetweenArrays(data)
 # ips分析
@@ -1094,7 +1094,7 @@ boxplot <- ggboxplot(
     )
   );
 #输出
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\ggboxplot_ips.pdf", width = 8, height = 6);
+pdf(file = "save_data\\ggboxplot_ips.pdf", width = 8, height = 6);
 print(boxplot);
 dev.off();
 ```

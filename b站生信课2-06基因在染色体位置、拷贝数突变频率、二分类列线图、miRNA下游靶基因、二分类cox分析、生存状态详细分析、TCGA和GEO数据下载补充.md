@@ -42,8 +42,8 @@ library("RCircos");
 **读取数据**：基因位置信息、基因名称
 ``` r
 data(UCSC.HG19.Human.CytoBandIdeogram);  # 内置的人类染色体数据
-data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\multiCox.txt", check.names = F, row.names = 1, sep = '\t', header = T);  # 基因名称
-dataref <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\Ref.txt", header = T, sep = "\t", check.names = F, row.names = 1);  # 基因位置信息
+data <- read.table("save_data\\multiCox.txt", check.names = F, row.names = 1, sep = '\t', header = T);  # 基因名称
+dataref <- read.table("data\\Ref.txt", header = T, sep = "\t", check.names = F, row.names = 1);  # 基因位置信息
 # 合并
 samegene <- intersect(rownames(dataref), rownames(data));
 generef <- dataref[samegene, ];
@@ -58,7 +58,7 @@ generef2[, 1] <- paste("chr", generef2[, 1], sep = "");  # 在染色体名称前
 ![基因所在染色体位置2](./md-image/基因所在染色体位置2.png){:width=170 height=170}
 **画图**：
 ``` r
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\Circle.pdf", width = 7, height = 7);
+pdf(file = "save_data\\Circle.pdf", width = 7, height = 7);
 cyto.info <- UCSC.HG19.Human.CytoBandIdeogram;
 chr.exclude <- NULL;
 tracks.inside <- 4;
@@ -91,7 +91,7 @@ library(stringr);
 ```
 **读取突变数据**：
 ``` r
-CNV <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\TCGA-LUSC.gistic.tsv", header = T, sep = "\t", check.names = F, row.names = 1);
+CNV <- read.table("data\\TCGA-LUSC.gistic.tsv", header = T, sep = "\t", check.names = F, row.names = 1);
 # 更改行名，删除.之后的数
 rownames(CNV) <- unlist(lapply(rownames(CNV), function(x){
   str_split(string = x, pattern = "\\.")[[1]][1];
@@ -100,7 +100,7 @@ rownames(CNV) <- unlist(lapply(rownames(CNV), function(x){
 ![拷贝数突变频率3](./md-image/拷贝数突变频率3.png){:width=200 height=200}
 **读取注释信息，并将基因id转为基因名**：（类似于GEO数据的注释）
 ``` r
-gtf <- rtracklayer::import('C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GRCh38.gtf');
+gtf <- rtracklayer::import('data\\GRCh38.gtf');
 gtf <- as.data.frame(gtf);
 ids <- gtf[, c("gene_id", "gene_name")];
 colnames(ids) <- c('probe_id', 'symbol');  # 更改列名
@@ -115,7 +115,7 @@ CNV <- CNV[, -c(1, 2)];  # 去除前两列（基因id和基因名）
 ![拷贝数突变频率4](./md-image/拷贝数突变频率4.png){:width=230 height=230}
 **读取基因名称，合并，并计算GAIN和LOSS值**：
 ``` r
-data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\multiCox.txt", check.names = F, row.names = 1, sep = '\t', header = T);  # 基因名称
+data <- read.table("save_data\\multiCox.txt", check.names = F, row.names = 1, sep = '\t', header = T);  # 基因名称
 samegenes <- intersect(rownames(data),rownames(CNV));  # 共有基因
 rt <- CNV[samegenes, ];  # 提取
 # 计算GAIN和LOSS值
@@ -132,7 +132,7 @@ data <- data[order(data[, "GAIN"], decreasing = T), ];
 **画图**：
 ``` r
 data.max <- apply(data, 1, max);  # 每个基因GAIN和LOSS两者中的的最大值
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\CNV.frequency.pdf", width = 9, height = 6);
+pdf(file = "save_data\\CNV.frequency.pdf", width = 9, height = 6);
 cex <- 1.3;
 par(
   cex.lab = cex, 
@@ -174,7 +174,7 @@ library(tidyverse);
 ```
 **读取json文件，获取样本名称和文件名称的对照**：
 ``` r
-json <- jsonlite::fromJSON("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\甲基化数据\\metadata.cart.2023-12-31.json");
+json <- jsonlite::fromJSON("data\\甲基化数据\\metadata.cart.2023-12-31.json");
 # 样本名称
 sample_id <- sapply(json$associated_entities, function(x){x[, 1]});
 # 对应的txt文件名称
@@ -185,7 +185,7 @@ file_sample <- data.frame(sample_id, file_name);
 ![TCGA甲基化数据下载和整理1](./md-image/TCGA甲基化数据下载和整理1.png){:width=170 height=170}
 **获取每个txt的文件名称**：
 ``` r
-count_file <- list.files('C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\甲基化数据\\gdc_download_20231230_164551.556154\\', pattern = '*level3betas.txt', recursive = TRUE);
+count_file <- list.files('data\\甲基化数据\\gdc_download_20231230_164551.556154\\', pattern = '*level3betas.txt', recursive = TRUE);
 count_file_name <- strsplit(count_file, split='/');
 count_file_name <- sapply(count_file_name, function(x){x[2]});
 ```
@@ -194,7 +194,7 @@ count_file_name <- sapply(count_file_name, function(x){x[2]});
 ``` r
 # 先读取一个文件，看看有多少行
 test_data <- read.delim(
-  paste0('C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\甲基化数据\\gdc_download_20231230_164551.556154\\', count_file[1]), 
+  paste0('data\\甲基化数据\\gdc_download_20231230_164551.556154\\', count_file[1]), 
   fill = TRUE, header = FALSE, row.names = 1
 );
 # 结果矩阵
@@ -203,7 +203,7 @@ matrix <- data.frame(matrix(nrow = nrow(test_data), ncol = 0));
 for (i in 1:length(count_file)){
   # 根据文件名读取数据
   data <- read.delim(
-    paste0('C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\甲基化数据\\gdc_download_20231230_164551.556154\\', count_file[i]), 
+    paste0('data\\甲基化数据\\gdc_download_20231230_164551.556154\\', count_file[i]), 
     fill = TRUE, header = FALSE, row.names = 1
   );
   # 找该文件名对应的样本名
@@ -220,7 +220,7 @@ matrix <- na.omit(matrix);  # 删除NA
 save_df <- data.frame(ID = rownames(matrix), matrix);
 colnames(save_df) <- gsub('[.]', '-', colnames(save_df));
 # 保存
-write.table(save_df, 'C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\甲基化数据\\methylation.450.txt', sep = "\t", quote = F, row.names = F);
+write.table(save_df, 'data\\甲基化数据\\methylation.450.txt', sep = "\t", quote = F, row.names = F);
 ```
 ![TCGA甲基化数据下载和整理4](./md-image/TCGA甲基化数据下载和整理4.png){:width=220 height=220}
 行名（id列）是探针id，列名是样本名，数据值从0到1代表甲基化程度增加（1为完全甲基化，0是完全没有甲基化
@@ -248,7 +248,7 @@ library(limma);
 ```
 **读取表达矩阵并标准化**：
 ``` r
-data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\GSE30219.txt", header = T, sep = "\t", check.names = F, row.names = 1);
+data <- read.table("data\\GSE30219\\GSE30219.txt", header = T, sep = "\t", check.names = F, row.names = 1);
 # 转化为matrix
 dimnames <- list(rownames(data), colnames(data));
 data <- matrix(as.numeric(as.matrix(data)), nrow = nrow(data), dimnames = dimnames);
@@ -259,7 +259,7 @@ data <- normalizeBetweenArrays(data);
 # 保存
 write.table(
   data.frame(ID = rownames(data), data),
-  file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\normalize.txt", 
+  file = "data\\GSE30219\\normalize.txt", 
   sep = "\t", quote = F, row.names = F
 );
 ```
@@ -271,8 +271,8 @@ gene <- c("A1BG","A1CF","A2M","A2ML1","A2MP1","A4GALT");  # 基因列表
 data <- data[gene, ];  # 提取表达矩阵
 data <- t(data);
 # 读取分组信息
-Control <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\Control.txt", header = F, sep = "\t", check.names = F);
-Treat <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\Treat.txt", header = F, sep = "\t", check.names = F);
+Control <- read.table("data\\GSE30219\\Control.txt", header = F, sep = "\t", check.names = F);
+Treat <- read.table("data\\GSE30219\\Treat.txt", header = F, sep = "\t", check.names = F);
 # 按照control和treat排序
 data <- data[c(Control[, 1], Treat[, 1]), ];
 # 设置分组信息
@@ -300,7 +300,7 @@ nomo <- nomogram(
 ```
 **列线图**：
 ``` r
-pdf("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\Nom.pdf", width = 9, height = 6);
+pdf("save_data\\Nom.pdf", width = 9, height = 6);
 plot(nomo);
 dev.off();
 ```
@@ -309,7 +309,7 @@ dev.off();
 **校准曲线**：
 ``` r
 cali <- calibrate(lrmModel, method = "boot", B = 1000);
-pdf("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\Calibration.pdf", width = 6, height = 6);
+pdf("save_data\\Calibration.pdf", width = 6, height = 6);
 plot(
   cali,
   xlab = "Predicted probability", ylab = "Actual probability", 
@@ -331,7 +331,7 @@ dc <- decision_curve(
   confidence.intervals = 0.95
 );
 # DCA图形
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\DCA.pdf", width = 6, height = 6);
+pdf(file = "save_data\\DCA.pdf", width = 6, height = 6);
 plot_decision_curve(
   dc,
   curve.names = "six genes",
@@ -352,7 +352,7 @@ library(pheatmap);
 ```
 **读取数据，并按风险得分从小到大排序**：
 ``` r
-rt <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\risk.txt", header = T, sep = "\t", check.names = F, row.names = 1);
+rt <- read.table("save_data\\risk.txt", header = T, sep = "\t", check.names = F, row.names = 1);
 rt <- rt[order(rt$riskScore), ];
 ```
 ![表达热图1](./md-image/表达热图1.png){:width=200 height=200}
@@ -364,7 +364,7 @@ highLength <- length(riskClass[riskClass=="high"]);
 lowMax <- max(rt$riskScore[riskClass=="low"]);  # 高/低风险组分界点的纵坐标
 line <- rt[, "riskScore"];
 line[line>10] <- 10;  # 将超过10的风险得分设置为10
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\riskScore1.pdf", width = 7, height = 4);
+pdf(file = "save_data\\riskScore1.pdf", width = 7, height = 4);
 plot(
   line, 
   type = "p", 
@@ -393,7 +393,7 @@ dev.off();
 color <- as.vector(rt$state);
 color[color==1] <- "Firebrick3";
 color[color==0] <- "MediumSeaGreen";
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\survStat1.pdf", width = 7, height = 4);
+pdf(file = "save_data\\survStat1.pdf", width = 7, height = 4);
 plot(
   rt$time, 
   pch = 19,
@@ -425,7 +425,7 @@ rt1 <- rt[c(3:(ncol(rt)-2))];  # 取表达量
 rt1 <- t(rt1);
 annotation <- data.frame(Risk = rt[, ncol(rt)]);
 rownames(annotation) <- rownames(rt);
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\surv_heatmap1.pdf", width = 6, height = 5);
+pdf(file = "save_data\\surv_heatmap1.pdf", width = 6, height = 5);
 pheatmap(
   rt1, 
   annotation = annotation,
@@ -462,7 +462,7 @@ library(tidyverse);
 **读取mirna文件（获取要预测的mirna名称），进行预测**：
 ``` r
 # 读取文件
-data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\miRNA.RPM.txt", sep = "\t", check.names = F,header = T, row.names = 1);
+data <- read.table("save_data\\miRNA.RPM.txt", sep = "\t", check.names = F,header = T, row.names = 1);
 gene <- rownames(data)[1:5];  # 以前5个mirna为例
 example <- get_multimir(
   org = "hsa",  # 物种：hsa人类、mmu小鼠、rno兔子
@@ -472,7 +472,7 @@ example <- get_multimir(
 );
 example_result <- example@data;
 # 保存
-write.table(example_result, file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\mirna_all.predict.txt", sep = "\t", quote = F, row.names = F, col.names = T);
+write.table(example_result, file = "save_data\\mirna_all.predict.txt", sep = "\t", quote = F, row.names = F, col.names = T);
 ```
 ![预测microRNA下游靶基因1](./md-image/预测microRNA下游靶基因1.png){:width=200 height=200}
 - `mature_mirna_id`mirna名称
@@ -522,7 +522,7 @@ library(stringr);
 ``` r
 gset <- getGEO(
   "GSE98422", 
-  destdir = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE98422",
+  destdir = "data\\GSE98422",
   AnnotGPL = F,
   getGPL = F
 );
@@ -530,8 +530,8 @@ gset <- getGEO(
 pd <- pData(gset[[1]]);
 pd2 <- pData(gset[[2]]);
 # 保存
-write.csv(pd, 'C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE98422\\clinicalGSE98422.1.csv',row.names = TRUE);
-write.csv(pd2, 'C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE98422\\clinicalGSE98422.2.csv', row.names = TRUE);
+write.csv(pd, 'data\\GSE98422\\clinicalGSE98422.1.csv',row.names = TRUE);
+write.csv(pd2, 'data\\GSE98422\\clinicalGSE98422.2.csv', row.names = TRUE);
 ```
 ![其它文件的下载和整理5](./md-image/其它文件的下载和整理5.png){:width=150 height=150}
 ![其它文件的下载和整理6](./md-image/其它文件的下载和整理6.png){:width=150 height=150}
@@ -539,17 +539,17 @@ write.csv(pd2, 'C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\
 **表达矩阵**：
 ``` r
 # 获取全部的表达矩阵文件名
-count_file <- list.files('C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE98422\\GSE98422_RAW\\', pattern = '*.txt', recursive = T);
+count_file <- list.files('data\\GSE98422\\GSE98422_RAW\\', pattern = '*.txt', recursive = T);
 # 看看有多少行
 test_data <- read.delim(
-  paste0('C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE98422\\GSE98422_RAW\\', count_file[1]), 
+  paste0('data\\GSE98422\\GSE98422_RAW\\', count_file[1]), 
   fill = TRUE, header = T, row.names = 1
 );
 # 结果矩阵
 matrix <- data.frame(matrix(nrow = nrow(test_data), ncol = 0));
 # 逐个读取及合并
 for (i in 1:length(count_file)){
-  path <- paste0('C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE98422\\GSE98422_RAW\\', count_file[i]);  
+  path <- paste0('data\\GSE98422\\GSE98422_RAW\\', count_file[i]);  
   data <- read.delim(path, fill = T, header = T, row.names = 1);
   data <- data[, 4, drop=F];
   matrix <- cbind(matrix, data);
@@ -592,7 +592,7 @@ matrix1 <- matrix1[, -1];
 # 保存
 write.table(
   data.frame(ID = rownames(matrix1), matrix1),
-  file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE98422\\GSE98422.txt", 
+  file = "data\\GSE98422\\GSE98422.txt", 
   sep = "\t", quote = F, row.names = F
 );
 ```
@@ -627,7 +627,7 @@ gdc-client.exe download -m gdc_manifest.2024-03-01.txt
 library(rjson);
 library(tidyverse);
 # 读入metadata文件
-json <- jsonlite::fromJSON("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\大于5G的数据下载\\metadata.cart.2024-03-01.json");
+json <- jsonlite::fromJSON("data\\大于5G的数据下载\\metadata.cart.2024-03-01.json");
 # 获取样本名称及文件名称
 sample_id <- sapply(json$associated_entities, function(x){x[, 1]});
 file_sample <- data.frame(sample_id, file_name = json$file_name);
@@ -635,8 +635,8 @@ file_sample <- data.frame(sample_id, file_name = json$file_name);
 file_sample1 <- file_sample[1:(nrow(file_sample)/2), ];
 file_sample2 <- file_sample[(nrow(file_sample)/2):nrow(file_sample)+1, ];
 # 导出
-write.table(file_sample1, 'C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\大于5G的数据下载\\samples1.txt', sep = "\t", quote = F, row.names = F);
-write.table(file_sample2, 'C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\大于5G的数据下载\\samples2.txt', sep = "\t", quote = F, row.names = F);
+write.table(file_sample1, 'data\\大于5G的数据下载\\samples1.txt', sep = "\t", quote = F, row.names = F);
+write.table(file_sample2, 'data\\大于5G的数据下载\\samples2.txt', sep = "\t", quote = F, row.names = F);
 ```
 `file_sample2`：
 ![大于5G的数据下载4](./md-image/大于5G的数据下载4.png){:width=200 height=200}
@@ -660,18 +660,18 @@ write.table(file_sample2, 'C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioi
 ``` r
 # 读取文件名
 count_file <- list.files(
-  'C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\大于5G的数据下载\\file1\\',
+  'data\\大于5G的数据下载\\file1\\',
   pattern = '*.tsv',recursive = TRUE
 );
 # 获取每个文件名称
 count_file_name <- strsplit(count_file, split = '/');
 count_file_name <- sapply(count_file_name, function(x){x[2]});
 # 结果矩阵
-test_data <- read.delim(paste0('C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\大于5G的数据下载\\file1\\', count_file[1]), fill = TRUE, header = FALSE, row.names = 1);
+test_data <- read.delim(paste0('data\\大于5G的数据下载\\file1\\', count_file[1]), fill = TRUE, header = FALSE, row.names = 1);
 matrix <- data.frame(matrix(nrow = nrow(test_data), ncol = 0));
 # 逐个读取及合并
 for (i in 1:length(count_file)){
-  path <- paste0('C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\大于5G的数据下载\\file1\\', count_file[i]);
+  path <- paste0('data\\大于5G的数据下载\\file1\\', count_file[i]);
   data <- read.delim(path, fill = TRUE,header = FALSE, row.names = 1);
   colnames(data) <- data[2, ];
   data <- data[6];  # 3-unstranded_counts 4-stranded_first 5-stranded_second 6-tpm_unstranded 7-fpkm_unstranded 8-fpkm_uq_unstranded
@@ -696,7 +696,7 @@ matrix0 <- matrix0[, -c(1, 2)];
 #导出
 matrix1 <- data.frame(ID = rownames(matrix0), matrix0);
 colnames(matrix1) <- gsub('[.]', '-', colnames(matrix1));
-write.table(matrix1,'C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\大于5G的数据下载\\TPM.txt', sep = "\t", quote = F, row.names = F);
+write.table(matrix1,'data\\大于5G的数据下载\\TPM.txt', sep = "\t", quote = F, row.names = F);
 ```
 ![大于5G的数据下载10](./md-image/大于5G的数据下载10.png){:width=300 height=300}
 ### 单/多因素cox分析筛选预后相关因素
@@ -708,8 +708,8 @@ library(survival);
 ```
 **读取数据**：
 ``` r
-cli <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\筛选预后相关因素clinical.txt", header = T, sep = "\t", check.names = F, row.names = 1);
-risk <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\risk.txt", header = T, sep = "\t", check.names = F, row.names = 1);
+cli <- read.table("data\\筛选预后相关因素clinical.txt", header = T, sep = "\t", check.names = F, row.names = 1);
+risk <- read.table("save_data\\risk.txt", header = T, sep = "\t", check.names = F, row.names = 1);
 ```
 ![筛选预后相关因素1](./md-image/筛选预后相关因素1.png){:width=200 height=200}
 ![筛选预后相关因素2](./md-image/筛选预后相关因素2.png){:width=180 height=180}
@@ -836,8 +836,8 @@ indep_multiCox <- function(rt, uniTab, project_path = ""){
   return(multiTab);
 }
 rt <- merge_data(risk, cli);
-uniTab <- indep_uniCox(rt, "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\");
-multiTab <- indep_multiCox(rt, uniTab,  "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\");
+uniTab <- indep_uniCox(rt, "save_data\\");
+multiTab <- indep_multiCox(rt, uniTab,  "save_data\\");
 ```
 画图使用的数据：
 ![筛选预后相关因素3](./md-image/筛选预后相关因素3.png){:width=200 height=200}
@@ -874,8 +874,8 @@ library(forestplot);
 **读取数据，合并**：
 ``` r
 # 读取
-cli <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\筛选预后相关因素改进clinical.txt", header = T, sep = "\t", check.names = F, row.names = 1);
-risk <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\risk.txt", header = T, sep = "\t", check.names = F, row.names = 1);
+cli <- read.table("data\\筛选预后相关因素改进clinical.txt", header = T, sep = "\t", check.names = F, row.names = 1);
+risk <- read.table("save_data\\risk.txt", header = T, sep = "\t", check.names = F, row.names = 1);
 # 合并
 sameSample <- intersect(row.names(cli), row.names(risk));
 risk <- risk[sameSample, ];
@@ -910,7 +910,7 @@ coxmod <- coxph(Surv(time, state) ~ ., data = rt);
 ft3 <- autoReg(coxmod, uni = TRUE, threshold = 0.05);
 # myft(ft3);  # 查看结果
 # 保存
-write.table(ft3, file="C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\multicox_result.txt", sep = "\t", row.names = F, quote = F);
+write.table(ft3, file="save_data\\multicox_result.txt", sep = "\t", row.names = F, quote = F);
 ```
 ![筛选预后相关因素改进3](./md-image/筛选预后相关因素改进3.png){:width=400 height=400}
 结果中`Mean ± SD`的就是连续变量，其它列出具体值的是离散变量。没有HR的就是参照值reference，可以看到每个离散变量的第一个值是参照
@@ -927,9 +927,9 @@ multiTab <- cbind(
   HR.95H = multiCoxSum$conf.int[, "upper .95"],
   pvalue = multiCoxSum$coefficients[, "Pr(>|z|)"]
 );
-write.table(cbind(id = row.names(multiTab), multiTab), file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\mul.cox.result.txt", sep = "\t", row.names = F, quote = F);
+write.table(cbind(id = row.names(multiTab), multiTab), file = "save_data\\mul.cox.result.txt", sep = "\t", row.names = F, quote = F);
 # 绘制森林图
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\multicox_forest.pdf", width = 8, height = 6, onefile = FALSE);
+pdf(file = "save_data\\multicox_forest.pdf", width = 8, height = 6, onefile = FALSE);
 ggforest(
   multiCox, 
   data = rt,

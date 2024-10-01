@@ -15,9 +15,10 @@
 - [Venn图绘制](#venn图绘制)
 - [列线图](#列线图)
 - [免疫组化图片](#免疫组化图片)
-- [免疫细胞浸润分析(cibersort)](#免疫细胞浸润分析cibersort)
-- [多种免疫细胞浸润分析](#多种免疫细胞浸润分析)
-- [免疫细胞浸润分析(ssGSEA)](#免疫细胞浸润分析ssgsea)
+- [免疫细胞浸润分析](#免疫细胞浸润分析)
+    - [免疫细胞浸润分析(cibersort)](#免疫细胞浸润分析cibersort)
+    - [多种免疫细胞浸润分析](#多种免疫细胞浸润分析)
+    - [免疫细胞浸润分析(ssGSEA)](#免疫细胞浸润分析ssgsea)
 - [免疫功能分析(ssGSEA)](#免疫功能分析ssgsea)
 
 <!-- /code_chunk_output -->
@@ -41,7 +42,7 @@ if(!require("ConsensusClusterPlus", quietly = T))
 **读取数据**：选出肿瘤组的样本，取出筛选后基因的在各样本中的表达量
 ``` r
 # tpm表达矩阵
-data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA_LUSC_TPM.txt", check.names = F, row.names = 1, sep = '\t', header = T);
+data <- read.table("save_data\\TCGA_LUSC_TPM.txt", check.names = F, row.names = 1, sep = '\t', header = T);
 dimnames <- list(rownames(data), colnames(data));
 data <- matrix(as.numeric(as.matrix(data)), nrow = nrow(data), dimnames = dimnames);
 # 选出肿瘤组的样本
@@ -49,7 +50,7 @@ group <- sapply(strsplit(colnames(data), '\\-'), "[", 4);
 group <- sapply(strsplit(group, ''), "[", 1);
 data <- data[, group==0];
 # 筛选基因
-multi_cox_gene <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\multiCox.txt", check.names = F, row.names = 1, sep = '\t', header = T);
+multi_cox_gene <- read.table("save_data\\multiCox.txt", check.names = F, row.names = 1, sep = '\t', header = T);
 data <- data[rownames(multi_cox_gene), ];
 ```
 ![一致性聚类与无监督聚类1](./md-image/一致性聚类与无监督聚类1.png){:width=250 height=250}
@@ -70,7 +71,7 @@ res <- ConsensusClusterPlus(
   reps = 100,
   pItem = 0.8,
   pFeature = 1,
-  title = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\ConsensusClusterPlus",
+  title = "save_data\\ConsensusClusterPlus",
   clusterAlg = "pam",
   distance = "euclidean",
   seed = 123,
@@ -107,7 +108,7 @@ letter <- LETTERS[1:10];  # 每组的名称，这里是ABCD大写字母
 uniq_clu <- levels(factor(clu$cluster));  # 原来每组的名称
 clu$cluster <- letter[match(clu$cluster, uniq_clu)];  # 将每组名称改成我们刚才定义的大写字母
 clu_save <- rbind(ID = colnames(clu), clu);
-write.table(clu_save, file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\cluster.txt", sep = '\t', row.names = F, quote = F);
+write.table(clu_save, file = "save_data\\cluster.txt", sep = '\t', row.names = F, quote = F);
 ```
 ![一致性聚类与无监督聚类6](./md-image/一致性聚类与无监督聚类6.png){:width=300 height=300}
 可以看到样品被分为了AB两组
@@ -143,7 +144,7 @@ if(!require("timeROC", quietly = T))
 # 读取生存信息
 library("readxl");
 library(tidyverse);
-cli <- read_excel("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\clinical.xlsx");
+cli <- read_excel("save_data\\clinical.xlsx");
 cli <- cli[, c("survival_time", "vital_status", "days_to_birth", "gender", "T", "N", "M", "stage_event", "anatomic_neoplasm_subdivision", "bcr_patient_barcode")];
 # 处理生存信息
 cli <- column_to_rownames(cli, "bcr_patient_barcode");  # 更改行名为样本名
@@ -176,7 +177,7 @@ cli$subdivision <- ifelse(  # 开头L->1  R->2
   )
 );
 # 读取风险得分
-risk <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\risk.txt", check.names = F, row.names = 1, sep = '\t', header = T);
+risk <- read.table("save_data\\risk.txt", check.names = F, row.names = 1, sep = '\t', header = T);
 # 合并
 same_sample <- intersect(row.names(risk), row.names(cli));
 risk <- risk[same_sample, ];
@@ -188,14 +189,14 @@ rt <- cbind(
 );
 # 保存生存信息
 library(writexl);
-write_xlsx(cbind(ID = row.names(cli), cli[, c("time", "state", "Age", "Gender", "T", "N", "M", "Stage", "subdivision")]), "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\new_clinical.xlsx");
+write_xlsx(cbind(ID = row.names(cli), cli[, c("time", "state", "Age", "Gender", "T", "N", "M", "Stage", "subdivision")]), "save_data\\new_clinical.xlsx");
 ```
 ![ROC曲线2](./md-image/ROC曲线2.png){:width=180 height=180}
 **ROC分析并绘图**：
 ``` r
 # 可以是state/是否为肿瘤组~基因表达量/风险得分
 roc1 <- roc(rt$state ~ rt$riskScore);  
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\ROC.riskscore.pdf", width = 5, height = 5);
+pdf(file = "save_data\\ROC.riskscore.pdf", width = 5, height = 5);
 bioCol = c("DarkOrchid", "Orange2", "MediumSeaGreen", "NavyBlue", "#8B668B", "#FF4500", "#135612", "#561214");
 plot(
   roc1,
@@ -227,7 +228,7 @@ roc_rt <- timeROC(
   times = c(1, 3, 5),
   ROC = T
 );
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\ROC.all.pdf", width = 5, height = 5);
+pdf(file = "save_data\\ROC.all.pdf", width = 5, height = 5);
 plot(roc_rt, time = 1, col = bioCol[1], title = F, lwd = 4);
 plot(roc_rt, time = 3, col = bioCol[2], title = F, lwd = 4, add = T);  # 在前一条线上继续添加
 plot(roc_rt, time = 5, col = bioCol[3], title = F, lwd = 4, add = T);  # 在前一条线上继续添加
@@ -257,7 +258,7 @@ roc_rt <- timeROC(
   times = c(pre_time),
   ROC = T
 );
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\cliROC.all.pdf", width = 5.5, height = 5.5);
+pdf(file = "save_data\\cliROC.all.pdf", width = 5.5, height = 5.5);
 # 风险得分的roc曲线
 plot(roc_rt, time = pre_time, col = bioCol[1], title = F, lwd = 4);
 # 
@@ -303,11 +304,11 @@ library(rms);
 **读取风险得分和临床数据，合并**：
 ``` r
 # 风险得分
-risk <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\risk.txt", check.names = F, row.names = 1, sep = '\t', header = T);
+risk <- read.table("save_data\\risk.txt", check.names = F, row.names = 1, sep = '\t', header = T);
 # 临床数据
 library("readxl");
 library(tibble);
-cli <- read_excel("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\new_clinical.xlsx");
+cli <- read_excel("save_data\\new_clinical.xlsx");
 cli <- column_to_rownames(cli, "ID");
 # 删除包含NA的行
 cli <- cli[apply(cli, 1, function(x)any(is.na(match(NA, x)))),  ];
@@ -323,7 +324,7 @@ rt <- cbind(risk[, c("time", "state", "risk")], cli[, c("Age", "Gender", "T", "N
 # 因为我们这里有生存时间和生存状态，所以用cox
 # 如果只是用来预测二分类（如正常/肿瘤），就用logistic回归
 res.cox <- coxph(Surv(time, state) ~ ., data = rt);
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\nomogram.pdf", width = 10, height = 11);
+pdf(file = "save_data\\nomogram.pdf", width = 10, height = 11);
 # 画图
 nom1 <- regplot(
   res.cox,
@@ -345,12 +346,12 @@ dev.off();
 nomo_risk <- predict(res.cox, data = rt, type = "risk");
 rt <- cbind(Nomogram = nomo_risk, risk);
 outTab <- rbind(ID = colnames(rt), rt);
-write.table(outTab, file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\nomoRisk.txt", sep = '\t', row.names = F, quote = F);
+write.table(outTab, file = "save_data\\nomoRisk.txt", sep = '\t', row.names = F, quote = F);
 ```
 ![列线图4](./md-image/列线图4.png){:width=150 height=150}
 **校准曲线**：
 ``` r
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\calibration.pdf", width = 6, height = 6);
+pdf(file = "save_data\\calibration.pdf", width = 6, height = 6);
 # 1年
 f <- cph(Surv(time, state) ~ Nomogram, x = T, y = T, surv = T, data = rt, time.inc = 1);
 cal <- calibrate(f, cmethod = 'KM', method = "boot", u = 1, m = (nrow(rt)/3), B = 1000);
@@ -429,7 +430,8 @@ dev.off();
 ![免疫组化图片5](./md-image/免疫组化图片5.png){:width=250 height=250}
 对比这两种图片，就可得到该抗体在正常/肿瘤免疫组化的结果
 ![免疫组化图片6](./md-image/免疫组化图片6.png){:width=250 height=250}
-### 免疫细胞浸润分析(cibersort)
+### 免疫细胞浸润分析
+##### 免疫细胞浸润分析(cibersort)
 需要数据：tpm表达矩阵
 需要包：`e1071`、`parallel`、`preprocessCore`、`bseqsc`、`tidyverse`、`corrplot`、`vioplot`、`CIBERSORT`
 ``` r
@@ -481,7 +483,7 @@ library(vioplot);
 **读取数据**：
 ``` r
 data(LM22);  # 导入CIBERSORT内置数据，包含22种细胞中基因表达情况
-data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA_LUSC_TPM.txt", check.names = F, row.names = 1, sep = '\t', header = T);
+data <- read.table("save_data\\TCGA_LUSC_TPM.txt", check.names = F, row.names = 1, sep = '\t', header = T);
 dimnames <- list(rownames(data), colnames(data));
 data <- matrix(as.numeric(as.matrix(data)), nrow = nrow(data), dimnames = dimnames);
 ```
@@ -491,19 +493,19 @@ res <- cibersort(sig_matrix = LM22, mixture_file = data);
 # 保存结果
 res <- as.matrix(res[, 1:(ncol(res)-3)]);
 res_save <- cbind(id = rownames(res), res);
-write.table(res_save, file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\CIBERSORT-Results.txt", row.names = F, sep = '\t', quote = F);
+write.table(res_save, file = "save_data\\CIBERSORT-Results.txt", row.names = F, sep = '\t', quote = F);
 ```
 ![免疫细胞浸润分析1](./md-image/免疫细胞浸润分析1.png){:width=200 height=200}
 行名是样本名，列名是不同的细胞类型，后三列是p值、相关性、RMSE，这三列一般不用，删去
 **绘图--柱状图1**：
 ``` r
-immune <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\CIBERSORT-Results.txt", header = T, sep = '\t', check.names = F);
+immune <- read.table("save_data\\CIBERSORT-Results.txt", header = T, sep = '\t', check.names = F);
 library(tidyverse);
 immune <- column_to_rownames(immune, "id");
 immune <- as.matrix(immune);
 data <- t(immune);
 col <- rainbow(nrow(data), s = 0.7, v = 0.7);
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\CIBERSORT1.pdf", width = 22, height = 10);
+pdf(file = "save_data\\CIBERSORT1.pdf", width = 22, height = 10);
 par(las = 1, mar = c(8, 5, 4, 16), mgp = c(3, 0.1, 0), cex.axis = 1.5);
 a1 <- barplot(data, col = col, yaxt = "n", ylab = "Relative Percent", xaxt = "n", cex.lab = 1.8);
 a2 <- axis(2, tick = F, labels = F);
@@ -543,7 +545,7 @@ colnames(plot_data) <- c("proportion", "celltype", "sample");
 plot_data$proportion <- as.numeric(plot_data$proportion);
 # 绘图
 my_colors36 <- c('#E5D2DD','#53A85F','#F1BB72','#F3B1A0','#D6E7A3','#57C3F3','#476D87','#E95C59','#E59CC4','#AB3282','#23452F','#BD956A','#8C549C','#585658','#9FA3A8','#E0D4CA','#5F3D69','#C5DEBA','#58A4C3','#E4C755','#F7F398','#AA9A59','#E63863','#E39A35','#C1E6F3','#6778AE','#91D0BE','#B53E2B','#712820','#DCC1DD','#CCE0F5','#CCC9E6','#625D9E','#68A180','#3A6963','#968175');
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\CIBERSORT2.pdf", width = 22, height = 10);
+pdf(file = "save_data\\CIBERSORT2.pdf", width = 22, height = 10);
 ggplot(
   plot_data,
   aes(sample, proportion, fill = celltype),
@@ -565,7 +567,7 @@ dev.off();
 ![免疫细胞浸润分析4](./md-image/免疫细胞浸润分析4.png){:width=500 height=500}
 **相关性图**：
 ``` r
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\CIBERSORT_cor.pdf", width = 13, height = 13);
+pdf(file = "save_data\\CIBERSORT_cor.pdf", width = 13, height = 13);
 par(oma = c(0.5, 1, 1, 1.2));
 plot_data <- immune[, colMeans(immune)>0];
 plot_data <- cor(immune);
@@ -596,7 +598,7 @@ rt2 <- immune[group==0, ];
 rt <- rbind(rt1, rt2);
 # 绘制小提琴图
 outTab <- data.frame();
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\CIBERSORT_vioplot.pdf", width = 13, height = 8);
+pdf(file = "save_data\\CIBERSORT_vioplot.pdf", width = 13, height = 8);
 par(las = 1, mar = c(10, 6, 3, 3));
 x <- 1:ncol(rt);
 y <- 1:ncol(rt);
@@ -663,14 +665,14 @@ text(
 );
 dev.off();
 # 保存数据（免疫细胞和其p值）
-write.table(outTab, file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\CIBERSORT_Diff.txt", row.names = F, sep = '\t', quote = F);
+write.table(outTab, file = "save_data\\CIBERSORT_Diff.txt", row.names = F, sep = '\t', quote = F);
 ```
 ![免疫细胞浸润分析6](./md-image/免疫细胞浸润分析6.png){:width=400 height=400}
 ![免疫细胞浸润分析7](./md-image/免疫细胞浸润分析7.png){:width=180 height=180}
 横坐标是细胞种类，纵坐标是每种细胞具体含量，p值就是每种细胞在正常/肿瘤组中的差异
 `outTab`是在正常/肿瘤组中有统计学差异的细胞
 除此之外，正常/肿瘤组也可以换成高/低风险组、某基因表达量高/低等
-### 多种免疫细胞浸润分析
+##### 多种免疫细胞浸润分析
 ``` r
 library(limma);
 library(scales);
@@ -680,7 +682,7 @@ library(ggtext);
 **读取免疫细胞浸润文件、tpm表达矩阵，并取交集**：
 ``` r
 # 免疫细胞浸润文件
-immune <- read.csv("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\infiltration_estimation_for_tcga.csv", check.names = F, row.names = 1, sep = ',', header = T);
+immune <- read.csv("data\\infiltration_estimation_for_tcga.csv", check.names = F, row.names = 1, sep = ',', header = T);
 immune <- as.matrix(immune);
 rownames(immune) <- gsub(  # 改样本名
   "(.*?)\\-(.*?)\\-(.*?)\\-(.*)", 
@@ -689,7 +691,7 @@ rownames(immune) <- gsub(  # 改样本名
 );
 immune <- avereps(immune);  # 对相同样本取平均值
 # tpm表达矩阵
-data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA_LUSC_TPM.txt", check.names = F, row.names = 1, sep = '\t', header = T);
+data <- read.table("save_data\\TCGA_LUSC_TPM.txt", check.names = F, row.names = 1, sep = '\t', header = T);
 dimnames <- list(rownames(data), colnames(data));
 data <- matrix(as.numeric(as.matrix(data)), nrow = nrow(data), dimnames = dimnames);
 group <- sapply(strsplit(colnames(data),"\\-"), "[", 4);
@@ -727,13 +729,13 @@ for(i in colnames(immune)){
   }
 }
 # 保存结果
-write.table(file="C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\immune_corResult.txt", outTab, sep="\t", quote=F, row.names=F);
+write.table(file="save_data\\immune_corResult.txt", outTab, sep="\t", quote=F, row.names=F);
 ```
 ![多种免疫细胞浸润分析4](./md-image/多种免疫细胞浸润分析4.png){:width=200 height=200}
 得到与A1BG基因表达量相关性显著的免疫细胞
 **绘制气泡图**：
 ``` r
-corResult <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\immune_corResult.txt", head=T, sep="\t");
+corResult <- read.table("save_data\\immune_corResult.txt", head=T, sep="\t");
 corResult$Software <- sapply(strsplit(corResult[, 1], "_"), '[', 2);  # 得到分析方法Software列
 corResult$Software <- factor(
   corResult$Software,
@@ -747,7 +749,7 @@ colslabels <- rep(
   hue_pal()(length(levels(b$Software))),
   table(b$Software)
 );  # 绘图颜色
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\immune_cor.pdf", width = 10, height = 10);
+pdf(file = "save_data\\immune_cor.pdf", width = 10, height = 10);
 ggplot(
   data = b, 
   aes(x=cor, y=immune, color=Software)
@@ -764,7 +766,7 @@ dev.off();
 ```
 ![多种免疫细胞浸润分析5](./md-image/多种免疫细胞浸润分析5.png){:width=600 height=600}
 横坐标是相关性系数，每种颜色是不同的分析方法，纵坐标是不同的免疫细胞，>0的点是正相关，<0的是负相关
-### 免疫细胞浸润分析(ssGSEA)
+##### 免疫细胞浸润分析(ssGSEA)
 需要数据：tpm表达矩阵、风险得分、免疫细胞的gmt数据集（提供每种免疫细胞相关联的基因）
 ``` r
 library(limma);
@@ -776,13 +778,13 @@ library(reshape2);
 **读取数据**：
 ``` r
 # tpm表达矩阵
-data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA_LUSC_TPM.txt", check.names = F, row.names = 1, sep = '\t', header = T);
+data <- read.table("save_data\\TCGA_LUSC_TPM.txt", check.names = F, row.names = 1, sep = '\t', header = T);
 dimnames <- list(rownames(data), colnames(data));
 data <- matrix(as.numeric(as.matrix(data)), nrow = nrow(data), dimnames = dimnames);
 # 数据集文件
-geneSet <- getGmt("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\免疫数据\\immune.gmt", geneIdType = SymbolIdentifier());
+geneSet <- getGmt("data\\免疫数据\\immune.gmt", geneIdType = SymbolIdentifier());
 # 风险得分
-risk <- read.table( "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\risk.txt", check.names = F, row.names = 1, sep = '\t', header = T);
+risk <- read.table( "save_data\\risk.txt", check.names = F, row.names = 1, sep = '\t', header = T);
 ```
 **ssGSEA分析**：
 ``` r
@@ -793,7 +795,7 @@ normalize <- function(x){  # 标准化函数
 }
 ssgseaScore <- normalize(ssgseaScore);  # 对ssGSEA score进行矫正
 ssgseaOut <- rbind(id = colnames(ssgseaScore), ssgseaScore);
-write.table(ssgseaOut, file="C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\immScore.txt", sep="\t", quote=F, col.names=F);
+write.table(ssgseaOut, file="save_data\\immScore.txt", sep="\t", quote=F, col.names=F);
 ```
 ![免疫细胞浸润分析ssGSEA1](./md-image/免疫细胞浸润分析ssGSEA1.png){:width=250 height=250}
 **去除正常样本，只保留肿瘤样本，并与风险得分合并**：
@@ -836,7 +838,7 @@ p <- ggboxplot(
       ),
     label = "p.signif"
   );
-pdf(file="C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\immune_ssGSEA.pdf", width = 8, height = 5);
+pdf(file="save_data\\immune_ssGSEA.pdf", width = 8, height = 5);
 print(p);
 dev.off();
 ```
@@ -858,13 +860,13 @@ library(GSEABase);
 library(ggpubr);
 library(reshape2);
 # tpm表达矩阵
-data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA_LUSC_TPM.txt", check.names = F, row.names = 1, sep = '\t', header = T);
+data <- read.table("save_data\\TCGA_LUSC_TPM.txt", check.names = F, row.names = 1, sep = '\t', header = T);
 dimnames <- list(rownames(data), colnames(data));
 data <- matrix(as.numeric(as.matrix(data)), nrow = nrow(data), dimnames = dimnames);
 # 数据集文件
-geneSet <- getGmt("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\免疫数据\\immune2.gmt", geneIdType = SymbolIdentifier());
+geneSet <- getGmt("data\\免疫数据\\immune2.gmt", geneIdType = SymbolIdentifier());
 # 风险得分
-risk <- read.table( "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\risk.txt", check.names = F, row.names = 1, sep = '\t', header = T);
+risk <- read.table( "save_data\\risk.txt", check.names = F, row.names = 1, sep = '\t', header = T);
 # ssGSEA分析
 gsvapar <- gsvaParam(data, geneSet, kcdf = 'Gaussian', absRanking = TRUE);
 ssgseaScore <- gsva(gsvapar);
@@ -874,7 +876,7 @@ normalize <- function(x){
 # 对ssGSEA score进行矫正
 ssgseaScore <- normalize(ssgseaScore);
 ssgseaOut <- rbind(id = colnames(ssgseaScore), ssgseaScore);
-write.table(ssgseaOut, file="C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\immScore2.txt", sep="\t", quote=F, col.names=F);
+write.table(ssgseaOut, file="save_data\\immScore2.txt", sep="\t", quote=F, col.names=F);
 # 只保留肿瘤样本
 group <- sapply(strsplit(colnames(ssgseaScore),"\\-"), "[", 4);
 group <- sapply(strsplit(group,""), "[", 1);
@@ -907,7 +909,7 @@ p <- ggboxplot(
       ),
     label = "p.signif"
   );
-pdf(file="C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\immune_ssGSEA2.pdf", width = 8, height = 5);
+pdf(file="save_data\\immune_ssGSEA2.pdf", width = 8, height = 5);
 print(p);
 dev.off();
 ```

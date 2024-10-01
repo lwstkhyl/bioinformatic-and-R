@@ -39,7 +39,7 @@ library(dplyr);
 ```
 **合并所有数据文件**：
 ``` r
-wd <- "C:/Users/WangTianHao/Documents/GitHub/R-for-bioinformatics/b站生信课03/data/突变数据/gdc_download_20231124_162149.342756/";
+wd <- "data/突变数据/gdc_download_20231124_162149.342756/";
 files <- list.files(wd, pattern = '*.gz', recursive = TRUE);
 all_mut <- data.frame();
 for (file in files) {
@@ -96,13 +96,13 @@ gene_count <- data.frame(
 ) %>%
   arrange(desc(Num));  # 按突变数从大到小排序
 # 保存数据
-write.table(gene_count, 'C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\geneMut.txt', sep="\t", quote=F, row.names = F);
-write.mafSummary(maf = all_mut, basename = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\input");
+write.table(gene_count, 'save_data\\geneMut.txt', sep="\t", quote=F, row.names = F);
+write.mafSummary(maf = all_mut, basename = "save_data\\input");
 ```
 ![突变数据整理4](./md-image/突变数据整理4.png){:width=250 height=250}
 **绘制瀑布图oncoplot**：
 ``` r
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\maf.pdf", width = 6, height = 6);
+pdf(file = "save_data\\maf.pdf", width = 6, height = 6);
 oncoplot(
   maf = all_mut,
   top = 30,  # 显示前30个的突变基因信息
@@ -121,7 +121,7 @@ tmb_table[,1] <- substr(tmb_table[,1],1,12);
 tmb_table <- aggregate( . ~ Tumor_Sample_Barcode, data = tmb_table, max);  # 去重，重复行取最大值
 colnames(tmb_table)[1] = "id";
 colnames(tmb_table)[2] = "TMB";
-write.table(tmb_table,'C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TMB.txt', sep="\t", quote=F, row.names = F);
+write.table(tmb_table,'save_data\\TMB.txt', sep="\t", quote=F, row.names = F);
 ```
 ![突变数据整理6](./md-image/突变数据整理6.png){:width=180 height=180}
 ### TIDE预测免疫治疗反应
@@ -132,13 +132,13 @@ library(ggpubr);
 ```
 **读取tpm表达矩阵，并进行标准化**：`数据值-行平均值`，使基因的均值为0
 ``` r
-rt <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA_LUSC_TPM.txt", header = T, sep = "\t", check.names = F);
+rt <- read.table("save_data\\TCGA_LUSC_TPM.txt", header = T, sep = "\t", check.names = F);
 rownames(rt) <- rt[, 1];
 exp <- rt[, 2:ncol(rt)];
 Expr <- t(apply(exp, 1, function(x)x-(mean(x))));
 write.table(
   data.frame(ID = rownames(Expr), Expr, check.names = F),
-  'C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\tcga_normalize.txt', sep="\t", quote=F, row.names = TRUE
+  'save_data\\tcga_normalize.txt', sep="\t", quote=F, row.names = TRUE
 );
 ```
 ![TIDE预测免疫治疗反应1](./md-image/TIDE预测免疫治疗反应1.png){:width=220 height=220}
@@ -153,7 +153,7 @@ write.table(
 只需要两列信息：`patient`样本名、`TIDE`
 **读取TIDE数据并处理**：
 ``` r
-tide <- read.csv("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TIDE.csv");
+tide <- read.csv("save_data\\TIDE.csv");
 tide <- tide[, c(1, 4)];
 # 仅保留肿瘤样本
 group <- sapply(strsplit(tide[, 1],"\\-"), "[", 4);
@@ -178,7 +178,7 @@ tide <- avereps(tide);
 
 ``` r
 # 读取风险得分
-risk <- read.table( "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\risk.txt", check.names = F, row.names = 1, sep = '\t', header = T);
+risk <- read.table( "save_data\\risk.txt", check.names = F, row.names = 1, sep = '\t', header = T);
 # 合并
 same_sample <- intersect(row.names(risk), row.names(tide));
 data <- cbind(
@@ -198,7 +198,7 @@ for(i in 1:ncol(comp)){
 ![TIDE预测免疫治疗反应6](./md-image/TIDE预测免疫治疗反应6.png){:width=60 height=60}
 **画图**：
 ``` r
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TIDE.pdf", width = 5, height = 4.5);
+pdf(file = "save_data\\TIDE.pdf", width = 5, height = 4.5);
 ggviolin(
   data, 
   x = "risk", y="TIDE", 
@@ -255,19 +255,19 @@ library(ggpubr);
 **读取数据**：
 ``` r
 # tpm表达矩阵
-data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA_LUSC_TPM.txt", header = T, sep = "\t", check.names = F, row.names = 1);
+data <- read.table("save_data\\TCGA_LUSC_TPM.txt", header = T, sep = "\t", check.names = F, row.names = 1);
 dimnames <- list(rownames(data), colnames(data));
 data <- matrix(as.numeric(as.matrix(data)), nrow = nrow(data), dimnames = dimnames);
 colnames(data) <- gsub("(.*?)\\_(.*?)", "\\2", colnames(data));
 # 读取风险得分
-risk <- read.table( "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\risk.txt", check.names = F, row.names = 1, sep = '\t', header = T);
+risk <- read.table( "save_data\\risk.txt", check.names = F, row.names = 1, sep = '\t', header = T);
 ```
 **读取GDSC文件并建模**：
 ``` r
 set.seed(999);  # 随机数种子
 # 读取GDSC文件
-GDSC2_Expr <- readRDS(file = 'C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\免疫数据\\GDSC2_Expr.rds');
-GDSC2_Res <- readRDS(file = 'C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\免疫数据\\GDSC2_Res.rds');
+GDSC2_Expr <- readRDS(file = 'data\\免疫数据\\GDSC2_Expr.rds');
+GDSC2_Res <- readRDS(file = 'data\\免疫数据\\GDSC2_Res.rds');
 GDSC2_Res <- exp(GDSC2_Res);
 # 药物敏感性建模（半小时左右）
 calcPhenotype(
@@ -287,7 +287,7 @@ calcPhenotype(
 **读入药敏文件，处理后与风险得分合并**：
 ``` r
 # 读入药敏文件
-senstivity <- read.csv("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\calcPhenotype_Output\\DrugPredictions.csv", header = T, sep = ",", check.names = F, row.names = 1);
+senstivity <- read.csv("save_data\\calcPhenotype_Output\\DrugPredictions.csv", header = T, sep = ",", check.names = F, row.names = 1);
 colnames(senstivity) <- gsub("(.*)\\_(\\d+)", "\\1", colnames(senstivity));
 # 仅保留肿瘤样本
 group <- sapply(strsplit(rownames(senstivity),"\\-"), "[", 4);
@@ -403,7 +403,7 @@ boxplot <- ggboxplot(
     )
   );
 # 输出图片
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\drugSenstivity.pdf", width = 20, height = 8);
+pdf(file = "save_data\\drugSenstivity.pdf", width = 20, height = 8);
 print(boxplot);
 dev.off();
 ```
@@ -423,7 +423,7 @@ set.seed(12345);
 **读入数据**：tpm表达矩阵和风险分组
 ``` r
 # 表达矩阵
-data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA_LUSC_TPM.txt", header = T, sep = "\t", check.names = F,row.names = 1);
+data <- read.table("save_data\\TCGA_LUSC_TPM.txt", header = T, sep = "\t", check.names = F,row.names = 1);
 dimnames <- list(rownames(data), colnames(data));
 data <- matrix(as.numeric(as.matrix(data)), nrow = nrow(data), dimnames = dimnames);
 data <- data[rowMeans(data)>0.5, ];
@@ -437,7 +437,7 @@ rownames(data) <- gsub("(.*?)\\-(.*?)\\-(.*?)\\-(.*)",  "\\1\\-\\2\\-\\3", rowna
 data <- avereps(data);
 data <- t(data);
 # 风险分组
-riskRT <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\risk.txt", header = T, sep = "\t", check.names = F, row.names = 1);
+riskRT <- read.table("save_data\\risk.txt", header = T, sep = "\t", check.names = F, row.names = 1);
 ```
 使用CGP数据库，使用`?pRRopheticPredict`--arguments--drug可以看到它可以预测哪些药物
 **进行预测**：
@@ -474,7 +474,7 @@ for(drug in alldrugs){
       palette = c("DodgerBlue1", "Firebrick2")
     ) + 
       stat_compare_means(comparisons = my_comparisons);
-    pdf(file = paste0("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\pRRopheticPredict\\durgsensitivity.", drug, ".pdf"), width = 2.3, height = 4.3);
+    pdf(file = paste0("save_data\\pRRopheticPredict\\durgsensitivity.", drug, ".pdf"), width = 2.3, height = 4.3);
     print(boxplot);
     dev.off();
   }
@@ -503,22 +503,22 @@ library(ggpubr);
 ``` r
 # 基因过滤
 filterCommonGenes(
-  input.f = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA_LUSC_TPM.txt", 
-  output.f = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\免疫数据\\commonGenes.gct", 
+  input.f = "save_data\\TCGA_LUSC_TPM.txt", 
+  output.f = "data\\免疫数据\\commonGenes.gct", 
   id = "GeneSymbol"
 );
 # 运行estimate包
 estimateScore(
-  input.ds = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\免疫数据\\commonGenes.gct",
-  output.ds = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\estimateScore.gct"  # 输出结果
+  input.ds = "data\\免疫数据\\commonGenes.gct",
+  output.ds = "save_data\\estimateScore.gct"  # 输出结果
 );
 # 保存每个样品的打分
-scores <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\estimateScore.gct", skip = 2, header = T);
+scores <- read.table("save_data\\estimateScore.gct", skip = 2, header = T);
 rownames(scores) <- scores[, 1];
 scores <- t(scores[, 3:ncol(scores)]);
 rownames(scores) <- gsub("\\.", "\\-", rownames(scores));
 out <- rbind(ID = colnames(scores), scores);
-write.table(out, file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TMEscores.txt", sep = "\t", quote = F, col.names = F);
+write.table(out, file = "save_data\\TMEscores.txt", sep = "\t", quote = F, col.names = F);
 ```
 ![免疫浸润评分estimate1](./md-image/免疫浸润评分estimate1.png){:width=150 height=150}
 这四列分别是`StromalScore`肿瘤组织中的基质细胞、`ImmuneScore`肿瘤组织中的免疫细胞浸润、`ESTIMATEScore`estimate得分、`TumorPurity`肿瘤纯度
@@ -533,7 +533,7 @@ write.table(out, file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinf
 # 仅保留前3列
 score <- scores[,1:3];
 # 读取风险文件
-Risk <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\risk.txt", header = T, sep = "\t", check.names = F, row.names = 1);
+Risk <- read.table("save_data\\risk.txt", header = T, sep = "\t", check.names = F, row.names = 1);
 Risk$risk <- factor(Risk$risk, levels = c("low","high"));
 # 仅保留肿瘤样本
 group <- sapply(strsplit(rownames(score), "\\-"), "[", 4);
@@ -573,7 +573,7 @@ p1 <- p + stat_compare_means(
   label = "p.signif"
 );
 #输出图形
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TME.vioplot.pdf", width = 8, height = 5);
+pdf(file = "save_data\\TME.vioplot.pdf", width = 8, height = 5);
 print(p1);
 dev.off();
 ```
@@ -598,7 +598,7 @@ library(limma);
 
 ``` r
 # tpm表达矩阵
-data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA_LUSC_TPM.txt", header = T, sep = "\t", check.names = F, row.names = 1);
+data <- read.table("save_data\\TCGA_LUSC_TPM.txt", header = T, sep = "\t", check.names = F, row.names = 1);
 dimnames <- list(rownames(data), colnames(data));
 data <- matrix(as.numeric(as.matrix(data)), nrow = nrow(data), dimnames = dimnames);
 # 仅保留肿瘤样本
@@ -616,7 +616,7 @@ data <- data[, c(gene, "Type")];
 rownames(data) <- gsub("[.]", "-", rownames(data));
 data <- data[order(data[, gene]), ];  # 按表达量排序
 # 临床信息
-cli <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\clinical.txt", header = T, sep = "\t", check.names = F, row.names = 1);
+cli <- read.table("save_data\\clinical.txt", header = T, sep = "\t", check.names = F, row.names = 1);
 cli[,"Age"] <- ifelse(
   cli[, "Age"]=="unknow", 
   "unknow", 
@@ -677,7 +677,7 @@ zero_row_mat <- matrix(nrow = 0, ncol = nrow(rt));  # 每个样本都有一列
 ha <- HeatmapAnnotation(df = rt, col = colorList);
 Hm <- Heatmap(zero_row_mat, top_annotation = ha);
 # 保存图片
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\cli_heatmap.pdf", width = 7, height = 5);
+pdf(file = "save_data\\cli_heatmap.pdf", width = 7, height = 5);
 draw(Hm, merge_legend = TRUE, heatmap_legend_side = "bottom", annotation_legend_side = "bottom");
 dev.off();
 ```
@@ -689,7 +689,7 @@ dev.off();
 ``` r
 library(limma);
 library(ggpubr);
-data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA_LUSC_TPM.txt", header = T, sep = "\t", check.names = F, row.names = 1);
+data <- read.table("save_data\\TCGA_LUSC_TPM.txt", header = T, sep = "\t", check.names = F, row.names = 1);
 dimnames <- list(rownames(data), colnames(data));
 data <- matrix(as.numeric(as.matrix(data)), nrow = nrow(data), dimnames = dimnames);
 group <- sapply(strsplit(colnames(data),"\\-"), "[", 4);
@@ -697,7 +697,7 @@ group <- sapply(strsplit(group, ""), "[", 1);
 group <- gsub("2", "1", group);
 data <- t(data[, group==0]);
 rownames(data) <- gsub("(.*?)\\-(.*?)\\-(.*?)\\-(.*?)\\-.*", "\\1\\-\\2\\-\\3", rownames(data));
-cli <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\clinical.txt", header = T, sep = "\t", check.names = F, row.names = 1);
+cli <- read.table("save_data\\clinical.txt", header = T, sep = "\t", check.names = F, row.names = 1);
 cli[,"Age"] <- ifelse(
   cli[, "Age"]=="unknow", 
   "unknow", 
@@ -733,7 +733,7 @@ for(clinical in colnames(rt[, 2:ncol(rt)])){
   ) + 
     stat_compare_means(comparisons = my_comparisons);
   # 保存图片
-  pdf(file = paste0("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\clinicalCor_", clinical, ".pdf"), width = 5.5, height = 5);
+  pdf(file = paste0("save_data\\clinicalCor_", clinical, ".pdf"), width = 5.5, height = 5);
   print(boxplot);
   dev.off();
 }
@@ -759,7 +759,7 @@ library(ggVolcano);
 ```
 **读入表达量数据**：
 ``` r
-data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\GSE30219.txt", header = T, sep = "\t", check.names = F, row.names = 1);
+data <- read.table("data\\GSE30219\\GSE30219.txt", header = T, sep = "\t", check.names = F, row.names = 1);
 dimnames <- list(rownames(data), colnames(data));
 data <- matrix(as.numeric(as.matrix(data)), nrow = nrow(data), dimnames = dimnames);  # 转化为matrix
 # data=data[rowMeans(data)>1,];  # 去除低表达的基因
@@ -767,15 +767,15 @@ data <- matrix(as.numeric(as.matrix(data)), nrow = nrow(data), dimnames = dimnam
 data <- normalizeBetweenArrays(data);  # 标准化
 # boxplot(data.frame(data),col="#4DBBD5");  # 根据箱型图是否变平整查看结果是否标准化
 # 保存数据
-write.table(data.frame(ID = rownames(data), data), file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\geo_normalize.txt", sep = "\t", quote = F, row.names = F);
+write.table(data.frame(ID = rownames(data), data), file = "save_data\\geo_normalize.txt", sep = "\t", quote = F, row.names = F);
 ```
 ![差异表达分析GEO2](./md-image/差异表达分析GEO2.png){:width=150 height=150}
 **读取分组信息**（每个样本是正常还是肿瘤），**并进行差异分析和差异基因筛选**（这部分过程与TCGA的类似）：
 注意：表达矩阵已经取过log2，无需再取
 ``` r
 # 分组信息文件
-Control <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\Control.txt", header = F, sep = "\t", check.names = F);
-Treat <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\Treat.txt", header = F, sep = "\t", check.names = F);
+Control <- read.table("data\\GSE30219\\Control.txt", header = F, sep = "\t", check.names = F);
+Treat <- read.table("data\\GSE30219\\Treat.txt", header = F, sep = "\t", check.names = F);
 # 分组信息
 conNum <- length(rownames(Control));
 treatNum <- length(rownames(Treat));
@@ -811,7 +811,7 @@ pValue <- outTab[,"pValue"];
 fdr <- p.adjust(as.numeric(as.vector(pValue)), method = "fdr");
 outTab <- cbind(outTab, fdr = fdr);
 # 保存差异分析结果
-write.table(outTab, file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\all.Wilcoxon.txt", sep = "\t", row.names = F, quote = F);
+write.table(outTab, file = "save_data\\all.Wilcoxon.txt", sep = "\t", row.names = F, quote = F);
 # 差异基因筛选
 logFCfilter <- 1;
 fdrFilter <- 0.05;
@@ -820,7 +820,7 @@ outDiff <- outTab[(
   abs(as.numeric(as.vector(outTab$logFC)))>logFCfilter & 
   as.numeric(as.vector(outTab$fdr))<fdrFilter
 ), ];
-write.table(outDiff, file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\diff.Wilcoxon.txt", sep = "\t", row.names = F, quote = F);
+write.table(outDiff, file = "save_data\\diff.Wilcoxon.txt", sep = "\t", row.names = F, quote = F);
 ```
 `outTab`：
 ![差异表达分析GEO3](./md-image/差异表达分析GEO3.png){:width=170 height=170}
@@ -843,7 +843,7 @@ hmExp <- log2(data[hmGene, ]+0.01);  # 取log2
 Type <- c(rep("Normal", conNum),rep("Tumor", treatNum));  # 分组信息
 names(Type) <- colnames(data);
 Type <- as.data.frame(Type);
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\geo_heatmap.pdf", width = 10, height = 6.5);
+pdf(file = "save_data\\geo_heatmap.pdf", width = 10, height = 6.5);
 pheatmap(
   hmExp, 
   annotation = Type, 
@@ -857,7 +857,7 @@ pheatmap(
 );
 dev.off();
 # 火山图
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\geo_vol.pdf", width = 5, height = 5);
+pdf(file = "save_data\\geo_vol.pdf", width = 5, height = 5);
 xMax <- 6;
 yMax <- max(-log10(outTab$fdr))+1;
 plot(

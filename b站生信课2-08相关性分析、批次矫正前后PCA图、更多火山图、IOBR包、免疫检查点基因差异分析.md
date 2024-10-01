@@ -16,6 +16,7 @@
 - [批次矫正前后PCA图](#批次矫正前后pca图)
 - [更多种类火山图](#更多种类火山图)
 - [IOBR包的其它分析方法](#iobr包的其它分析方法)
+- [免疫检查点基因的差异分析(ICG)](#免疫检查点基因的差异分析icg)
 
 <!-- /code_chunk_output -->
 
@@ -27,7 +28,7 @@
 ### 相关性分析
 ##### 棒棒糖图和散点图
 需要数据：tpm表达矩阵、cibersort免疫细胞浸润分析得到的`CIBERSORT-Results.txt`
-```{r}
+``` r
 if(!require("ggExtra", quietly = T))
 {
   install.packages("ggExtra");
@@ -38,9 +39,9 @@ library(ggpubr);
 library(ggExtra);
 ```
 **读取数据，合并**：
-```{r}
+``` r
 # 表达矩阵
-data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA_LUSC_TPM.txt", check.names = F, row.names = 1, sep = '\t', header = T);
+data <- read.table("save_data\\TCGA_LUSC_TPM.txt", check.names = F, row.names = 1, sep = '\t', header = T);
 # 仅保留肿瘤样本
 group <- sapply(strsplit(colnames(data), "\\-"), "[", 4);
 group <- sapply(strsplit(group,""), "[", 1);
@@ -50,7 +51,7 @@ gene <- "A1BG";
 data <- t(data[gene, , drop=F]);
 data <- as.data.frame(data);
 # 免疫细胞浸润分析数据
-immune <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\CIBERSORT-Results.txt", header = T, sep = '\t', check.names = F, row.names = 1);
+immune <- read.table("save_data\\CIBERSORT-Results.txt", header = T, sep = '\t', check.names = F, row.names = 1);
 # 仅保留肿瘤样本
 group <- sapply(strsplit(rownames(immune), "\\-"), "[", 4);
 group <- sapply(strsplit(group,""), "[", 1);
@@ -62,7 +63,7 @@ rt <- cbind(immune[sameSample, , drop=F], data[sameSample, , drop=F]);
 ![棒棒糖图和散点图1](./md-image/棒棒糖图和散点图1.png){:width=200 height=200}
 行名是样本名，列是免疫细胞种类和A1BG基因表达量
 **相关性散点图**：每个免疫细胞都和A1BG表达量进行分析，将符合阈值的画图
-```{r}
+``` r
 outTab <- data.frame();
 for(i in colnames(rt)[1:(ncol(rt)-1)]){
   x <- as.numeric(rt[, gene]);  # x轴是表达量
@@ -74,7 +75,7 @@ for(i in colnames(rt)[1:(ncol(rt)-1)]){
   outTab <- rbind(outTab, outVector);
   # 阈值设置为0.05
   if(cor$p.value<0.05){
-    outFile <- paste0("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\cor.result\\cor.", i, ".pdf");
+    outFile <- paste0("save_data\\cor.result\\cor.", i, ".pdf");
     df1 <- as.data.frame(cbind(x, y));
     p1 <- ggplot(df1, aes(x, y)) + 
       xlab(paste0(gene, " expression")) + 
@@ -96,14 +97,14 @@ for(i in colnames(rt)[1:(ncol(rt)-1)]){
   }
 }
 # 保存
-write.table(outTab, file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\cor.result\\cor.result.txt", sep = "\t", row.names = F, quote = F);
+write.table(outTab, file = "save_data\\cor.result\\cor.result.txt", sep = "\t", row.names = F, quote = F);
 ```
 其中一张图：
 ![棒棒糖图和散点图2](./md-image/棒棒糖图和散点图2.png){:width=500 height=500}
 横坐标是指定基因表达量，纵坐标是某个免疫细胞浸润水平，每个点都是一个样本
 ![棒棒糖图和散点图3](./md-image/棒棒糖图和散点图3.png){:width=170 height=170}
 **棒棒糖图**：
-```{r}
+``` r
 outTab$cor <- as.numeric(outTab$cor);
 outTab$pvalue <- as.numeric(outTab$pvalue);
 # 圆圈颜色
@@ -150,7 +151,7 @@ outTab <- outTab[order(outTab$cor), ];
 # x轴范围
 xlim <- ceiling(max(abs(outTab$cor))*10)/10;
 # 画图
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\Lollipop.pdf", width = 9, height = 7);
+pdf(file = "save_data\\Lollipop.pdf", width = 9, height = 7);
 layout(
   mat = matrix(c(1,1,1,1,1,0,2,0,3,0), nc = 2),
   width = c(8,2.2),
@@ -235,7 +236,7 @@ dev.off();
 ##### mRNA-lncRNA共表达分析
 将第一节中数据预处理-TCGA数据-表达数据中`new_matrix <- subset(x = new_matrix, gene_type=="protein_coding")`根据protein_coding筛选改成根据lncRNA筛选，得到`TCGA_LUSC_lncRNA.txt`
 还需要tpm表达矩阵（mRNA表达数据）
-```{r}
+``` r
 if(!require("ggalluvial", quietly = T))
 {
   install.packages("ggalluvial");
@@ -247,9 +248,9 @@ library(ggplot2);
 library(igraph);
 ```
 **读取数据**：
-```{r}
+``` r
 # mRNA表达矩阵
-mRNA <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA_LUSC_TPM.txt", check.names = F, row.names = 1, sep = '\t', header = T);
+mRNA <- read.table("save_data\\TCGA_LUSC_TPM.txt", check.names = F, row.names = 1, sep = '\t', header = T);
 # 仅保留肿瘤样本
 group <- sapply(strsplit(colnames(mRNA), "\\-"), "[", 4);
 group <- sapply(strsplit(group,""), "[", 1);
@@ -259,7 +260,7 @@ mRNA <- mRNA[rowMeans(mRNA)>0.5, ];
 # 提取自己感兴趣的mRNA
 mRNA <- mRNA[1:10, ];
 # lncRNA表达矩阵
-lncRNA <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA_LUSC_lncRNA.txt", check.names = F, row.names = 1, sep = '\t', header = T);
+lncRNA <- read.table("save_data\\TCGA_LUSC_lncRNA.txt", check.names = F, row.names = 1, sep = '\t', header = T);
 # 仅保留肿瘤样本
 group <- sapply(strsplit(colnames(lncRNA), "\\-"), "[", 4);
 group <- sapply(strsplit(group,""), "[", 1);
@@ -273,7 +274,7 @@ lncRNA <- lncRNA[apply(lncRNA, 1, sd)>0.5, ];
 `lncRNA`：
 ![mRNAlncRNA共表达分析2](./md-image/mRNAlncRNA共表达分析2.png){:width=220 height=220}
 **进行分析**：
-```{r}
+``` r
 # 筛选阈值
 corFilter <- 0.3;
 pvalueFilter <- 0.001;
@@ -308,13 +309,13 @@ for(i in row.names(lncRNA)){
   }
 }
 # 保存结果
-write.table(outTab, file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\lncRes.txt", sep = "\t", quote = F, row.names = F);
+write.table(outTab, file = "save_data\\lncRes.txt", sep = "\t", quote = F, row.names = F);
 # 保存筛选出的lncRNA的表达矩阵
 LncRNA2 <- unique(as.vector(outTab[, "lncRNA"]));
 LncRNAexp <- lncRNA[LncRNA2, ];
 write.table(
   rbind(ID = colnames(LncRNAexp), LncRNAexp),
-  file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\LncExp.txt",
+  file = "save_data\\LncExp.txt",
   sep = "\t", quote = F, col.names = F
 );
 ```
@@ -324,7 +325,7 @@ cor和pvalue是mRNA和lncRNA的相关性系数和p值，regulation是它们的�
 `LncRNAexp`：
 ![mRNAlncRNA共表达分析4](./md-image/mRNAlncRNA共表达分析4.png){:width=200 height=200}
 **画图**：mRNA与lncRNA的对应关系连线
-```{r}
+``` r
 rt <- outTab;
 # 第一张图
 # 颜色
@@ -368,7 +369,7 @@ p1 <- ggplot(
   ) + 
   coord_flip() +
   ggtitle("");
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\Lnccor1.pdf", width = 9, height = 5);
+pdf(file = "save_data\\Lnccor1.pdf", width = 9, height = 5);
 print(p1);
 dev.off();
 
@@ -424,7 +425,7 @@ V(g)$color <- node$color[match(
   node$label
 )];
 # 画图
-pdf("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\Lnccor2.pdf", width = 9, height = 8);
+pdf("save_data\\Lnccor2.pdf", width = 9, height = 8);
 layout(mat = matrix(c(1,2,1,2), nc = 2), height = c(1,11));
 par(mar = c(0,0,0,0));
 plot(
@@ -467,15 +468,15 @@ dev.off();
 ### 批次矫正前后PCA图
 使用数据：GSE30219、GSE74777、tpm表达矩阵
 具体方法与第一篇中去批次效应相同，这里只是多画了PCA图
-```{r}
+``` r
 library(limma);
 library(sva);
 library(ggplot2);
 ```
 **读取三个表达矩阵，去批次效应**：（同之前的方法）
-```{r}
+``` r
 # 文件路径
-files <- c("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA_LUSC_TPM.txt", "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\GSE30219.txt","C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE74777\\GSE74777.txt");
+files <- c("save_data\\TCGA_LUSC_TPM.txt", "data\\GSE30219\\GSE30219.txt","data\\GSE74777\\GSE74777.txt");
 gene_list <- list();
 # 读取数据并初步处理
 for (i in 1:length(files)) {
@@ -512,7 +513,7 @@ outTab <- ComBat(merge_data, batch_type, par.prior = T);
 ```
 ![批次矫正前后PCA图1](./md-image/批次矫正前后PCA图1.png){:width=250 height=250}
 **画图**：
-```{r}
+``` r
 # 画图函数
 draw_PCA <- function(data, res_path){  # 行名是样本名，列名是基因名
   # 标签
@@ -544,21 +545,21 @@ draw_PCA <- function(data, res_path){  # 行名是样本名，列名是基因名
   return(PCA);
 }
 # 画图，分别是去批次前后的表达矩阵
-PCA_res1 <- draw_PCA(t(merge_data), "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\PCA1.pdf");
-PCA_res2 <- draw_PCA(t(outTab), "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\PCA2.pdf");
+PCA_res1 <- draw_PCA(t(merge_data), "save_data\\PCA1.pdf");
+PCA_res2 <- draw_PCA(t(outTab), "save_data\\PCA2.pdf");
 ```
 ![批次矫正前后PCA图2](./md-image/批次矫正前后PCA图2.png){:width=400 height=400}
 ![批次矫正前后PCA图3](./md-image/批次矫正前后PCA图3.png){:width=400 height=400}
 可以看到第一张图中同种颜色的点都集中在一起，不同颜色点离得很远，说明批次效应较强。通常希望像第二张图一样，不同颜色的点（不同数据集的样本）都混在一起
 ### 更多种类火山图
 使用数据：上一篇笔记中GEO的Bayes差异表达分析结果`Bayes.all.gene.txt`
-```{r}
+``` r
 library(ggVolcano);
 ```
 **读取数据、标注差异基因**：
-```{r}
+``` r
 # 读取数据
-data1 <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\Bayes.all.gene.txt", header=T, sep="\t", check.names=F)
+data1 <- read.table("save_data\\Bayes.all.gene.txt", header=T, sep="\t", check.names=F)
 # 标注差异基因
 data2 <- add_regulate(
   data1, 
@@ -569,7 +570,7 @@ data2 <- add_regulate(
 ![更多种类火山图1](./md-image/更多种类火山图1.png){:width=170 height=170}
 主要多了regulate列，标记表达量偏高(logFC\>1)/偏低(logFC\<-1)/差异小(-1\<logFC\<1)；同时列名也发生了改变
 **画图**：
-```{r}
+``` r
 # 坐标轴名称
 ID <- "id";  # 基因名称
 Xname <- "Log2 FC";  # logFC
@@ -577,7 +578,7 @@ Yname <- "-Log10 adj.P.Val";  # p值
 # 标记感兴趣的基因（这里是随便选的4个）
 genes <- c("KANK3","LIMS2","SPRR1B","SFXN1");
 # 第一种火山图
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\vol1.pdf", width = 6, height = 6);
+pdf(file = "save_data\\vol1.pdf", width = 6, height = 6);
 ggvolcano(
   data2, 
   x = "log2FoldChange", y = "padj",
@@ -588,7 +589,7 @@ ggvolcano(
 dev.off();
 # 第二种火山图（更换颜色）
 colors <- c("#e94234", "#b4b4d8", "#269846")
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\vol2.pdf", width = 6, height = 6);
+pdf(file = "save_data\\vol2.pdf", width = 6, height = 6);
 ggvolcano(
   data2, 
   fills = colors, colors = colors,
@@ -599,7 +600,7 @@ ggvolcano(
 );
 dev.off();
 # 第三种火山图（渐变色）
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\vol3.pdf", width = 5, height = 5);
+pdf(file = "save_data\\vol3.pdf", width = 5, height = 5);
 gradual_volcano(
   data2, 
   x = "log2FoldChange", y = "padj",
@@ -619,7 +620,7 @@ dev.off();
 肿瘤微环境、免疫肿瘤学特征等等
 注：过程中若出现`Calling gsva(expr=., gset.idx.list=., method=., ...) is defunct`报错，就安装1.48版本的GSVA包：找到GSVA的安装文件（R安装目录中的library文件夹内），删除名为GSVA的文件夹，将`GSVA.1.48.zip`中的GSVA文件夹解压到library文件夹下（替换原来的GSVA）
 使用数据：tpm表达矩阵
-```{r}
+``` r
 if(!require("GSVA", quietly = T))
 {
   library("BiocManager");
@@ -628,15 +629,15 @@ if(!require("GSVA", quietly = T))
 library(IOBR);
 ```
 **读取数据**：
-```{r}
-data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\TCGA_LUSC_TPM.txt", check.names = F, row.names = 1, sep = '\t', header = T);
+``` r
+data <- read.table("save_data\\TCGA_LUSC_TPM.txt", check.names = F, row.names = 1, sep = '\t', header = T);
 data <- log2(data+1);  # 取log2，也可以不取，看哪个结果符合预期
 data <- data[rowMeans(data)>0.5, ];  # 去除低表达的基因
 ```
 ![IOBR包的其它分析方法1](./md-image/IOBR包的其它分析方法1.png){:width=220 height=220}
 **肿瘤微环境分析**：
 共有8种方法：'mcpcounter'、'epic'、'xcell'、'cibersort'、'ips'、'quantiseq'、'estimate'、'timer'
-```{r}
+``` r
 # IOBR包的8种分析
 im_mcpcounter <- deconvo_tme(eset = data, method = "mcpcounter");
 im_epic <- deconvo_tme(eset = data, method = "epic", arrays = F);
@@ -660,9 +661,9 @@ tme_combine <- im_mcpcounter %>%
   inner_join(im_timer, by = "ID") %>% 
   inner_join(im_ssgsea, by = "ID");
 # 保存
-saveRDS(tme_combine, "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\tme_combine.rds");
+saveRDS(tme_combine, "save_data\\tme_combine.rds");
 # 加载
-# tme_combine <- readRDS('C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\tme_combine.rds');
+# tme_combine <- readRDS('save_data\\tme_combine.rds');
 ```
 `im_genesets`：
 ![IOBR包的其它分析方法2](./md-image/IOBR包的其它分析方法2.png){:width=150 height=150}
@@ -671,7 +672,7 @@ saveRDS(tme_combine, "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinform
 ![IOBR包的其它分析方法3](./md-image/IOBR包的其它分析方法3.png){:width=220 height=220}
 第一列是样本名，后面的是各样本在各种分析中的得分
 **分组（正常/肿瘤）、画图**：
-```{r}
+``` r
 # 分组，第一列是样本名，第二列是属于哪组
 group <- sapply(strsplit(colnames(data),"\\-"), "[", 4);
 group <- sapply(strsplit(group, ""), "[", 1);
@@ -712,3 +713,144 @@ iobr_cor_plot(
   ![IOBR包的其它分析方法5](./md-image/IOBR包的其它分析方法5.png){:width=400 height=400}
 - 热图：
   ![IOBR包的其它分析方法6](./md-image/IOBR包的其它分析方法6.png){:width=400 height=400}
+### 免疫检查点基因的差异分析(ICG)
+类似于上一篇中的GEO基因差异分析，只不过把目标基因换成免疫检查点相关基因，并按高/低风险分组
+需要数据：风险得分、tpm表达矩阵、免疫检查点基因名称`ICGs.txt`
+``` r
+library(limma);
+library(reshape2);
+library(ggplot2);
+library(ggpubr);
+```
+**读取数据并分组**：
+``` r
+# 表达矩阵
+data <- read.table("save_data\\TCGA_LUSC_TPM.txt", check.names = F, row.names = 1, sep = '\t', header = T);
+# 基因列表
+gene <- read.table("data\\ICGs.txt", check.names = F, sep = '\t', header = F);
+# 取出免疫检查点基因的表达量
+sameGene <- intersect(rownames(data), as.vector(gene[, 1]));
+data <- t(data[sameGene, ]);
+data <- log2(data+1);  # 取log2，让图更好看
+# 仅保留肿瘤样本
+group <- sapply(strsplit(rownames(data), "\\-"), "[", 4);
+group <- sapply(strsplit(group,""), "[", 1);
+data <- data[group == 0, ];
+rownames(data) <- substr(rownames(data), 1, 12);  # 样本名仅保留前12字符
+# 分组信息
+risk <- read.table("save_data\\risk.txt", header = T, sep = "\t", check.names = F, row.names = 1);
+# 合并
+sameSample <- intersect(row.names(data), row.names(risk))
+rt1 <- cbind(data[sameSample, ], risk[sameSample, ]);
+rt1 <- rt1[, c(sameGene, "risk")];
+```
+![免疫检查点基因的差异分析1](./md-image/免疫检查点基因的差异分析1.png){:width=170 height=170}
+**筛选差异基因**：
+``` r
+pvalue.sig <- 0.05;  # p值阈值
+sigGene <- c();
+for(i in colnames(rt1)[1:(ncol(rt1)-1)]){
+  if(sd(rt1[, i])<0.001){next}
+  wilcoxTest <- wilcox.test(rt1[, i] ~ rt1[, "risk"]);
+  pvalue <- wilcoxTest$p.value;
+  if(wilcoxTest$p.value < pvalue.sig){
+    sigGene <- c(sigGene, i);
+  }
+}
+sigGene <- c(sigGene, "risk");
+rt1 <- rt1[, sigGene];
+```
+![免疫检查点基因的差异分析2](./md-image/免疫检查点基因的差异分析2.png){:width=170 height=170}
+**画图**：
+``` r
+# 数据宽变长
+rt1 <- melt(rt1, id.vars = c("risk"));
+colnames(rt1) <- c("risk", "Gene", "Expression");
+# 颜色
+jco <- c("#0048A1", "#E71D36");
+# 画图
+boxplot <- ggplot(
+  data = rt1,
+  aes(x = Gene, y = Expression, fill = risk)
+) +
+  scale_fill_manual(values = jco[2:1]) + 
+  geom_violin(
+    alpha = 0.4, 
+    position = position_dodge(width = .75),
+    size = 0.8, 
+    color = "black"  # 边框线颜色
+  ) +
+  geom_boxplot(
+    notch = TRUE, 
+    outlier.size = -1, 
+    color = "black", 
+    lwd = 0.8, 
+    alpha = 0.7
+  ) +
+  geom_point(
+    shape = 21, 
+    size = 0.5, 
+    position = position_jitterdodge(), 
+    color = "black", 
+    alpha = 0.05
+  ) +
+  theme_classic() +
+  ylab(expression("Gene expression")) +
+  xlab("") +
+  rotate_x_text(50) +
+  stat_compare_means(
+    aes(group = risk),
+    method = "wilcox.test",
+    symnum.args = list(
+      cutpoints = c(0, 0.001, 0.01, 0.05, 1), 
+      symbols = c("***", "**", "*", "ns")
+    ), 
+    label = "p.signif"
+  ) +
+  theme(
+    axis.ticks = element_line(
+      size = 0.2, 
+      color = "black"
+    ),
+    axis.ticks.length = unit(0.2, "cm"),
+    axis.text = element_text(
+      face = "bold.italic",
+      colour = "#441718",
+      size = 16
+    ),
+    axis.title = element_text(
+      face = "bold.italic",
+      colour = "#441718",
+      size = 16
+    ),
+    axis.line = element_blank(),
+    plot.title = element_text(
+      face = "bold.italic",
+      colour = "#441718",
+      size = 16
+    ),
+    panel.border = element_rect(
+      fill = NA,
+      color = "#35A79D",
+      size = 1.5,
+      linetype = "solid"
+    ),
+    panel.background = element_rect(fill = "#F1F6FC"),
+    panel.grid.major = element_line(
+      color = "#CFD3D6", 
+      size = .5,
+      linetype = "dotdash" 
+    ),
+    legend.text = element_text(face = "bold.italic"),
+    legend.title = element_text(
+      face = "bold.italic",
+      size = 13
+    )
+  );
+pdf(file = "save_data\\IGC.diff.pdf", width = 11, height = 5);
+print(boxplot);
+dev.off();
+```
+![免疫检查点基因的差异分析3](./md-image/免疫检查点基因的差异分析3.png){:width=300 height=300}
+按高/低风险分组，横坐标是基因名，纵坐标是其对应的在两组中的表达量
+注：因为这里进行了p值筛选，所以所有基因都有`*`差异

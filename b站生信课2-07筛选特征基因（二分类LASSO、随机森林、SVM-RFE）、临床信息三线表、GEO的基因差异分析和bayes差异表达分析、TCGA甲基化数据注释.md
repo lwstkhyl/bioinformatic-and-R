@@ -10,9 +10,10 @@
 
 <!-- code_chunk_output -->
 
-- [二分类LASSO回归](#二分类lasso回归)
-- [随机森林筛选特征基因](#随机森林筛选特征基因)
-- [SVM-RFE筛选特征基因](#svm-rfe筛选特征基因)
+- [筛选特征基因](#筛选特征基因)
+    - [二分类LASSO回归](#二分类lasso回归)
+    - [随机森林筛选特征基因](#随机森林筛选特征基因)
+    - [SVM-RFE筛选特征基因](#svm-rfe筛选特征基因)
 - [临床信息三线表](#临床信息三线表)
 - [GEO的Bayes差异表达分析](#geo的bayes差异表达分析)
 - [GEO基因差异分析](#geo基因差异分析)
@@ -25,7 +26,8 @@
 
 写在前面：本篇教程来自b站课程[TCGA及GEO数据挖掘入门必看](https://www.bilibili.com/video/BV1b34y1g7RM) P56-P62
 
-### 二分类LASSO回归
+### 筛选特征基因
+##### 二分类LASSO回归
 之前的LASSO回归是以生存情况为结果进行分析，这次是按控制/治疗分组（也可以是正常/肿瘤、治疗前/后、癌旁/肿瘤、存活/死亡）
 常用于在二分类构建诊断模型后，进行LASSO、随机森林、决策树分析，这三个结果取交集（当然用于分析的基因必须是相同的），以下将依次介绍这三种方法
 需要数据：GSE30219标准化的表达矩阵(normalize.txt)、分组信息(Control.txt/Treat.txt)
@@ -38,9 +40,9 @@ set.seed(123);  # 随机种子固定结果
 提取特定基因：可以是某些特定基因集、差异表达分析结果、单因素cox分析结果等。这里取的是平均表达量>12的前20个基因
 ``` r
 # 读取数据
-data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\normalize.txt", header = T, sep = "\t", check.names = F, row.names = 1);
-Control <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\Control.txt", header = F, sep = "\t", check.names = F);
-Treat <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\Treat.txt", header = F, sep = "\t", check.names = F);
+data <- read.table("data\\GSE30219\\normalize.txt", header = T, sep = "\t", check.names = F, row.names = 1);
+Control <- read.table("data\\GSE30219\\Control.txt", header = F, sep = "\t", check.names = F);
+Treat <- read.table("data\\GSE30219\\Treat.txt", header = F, sep = "\t", check.names = F);
 # 分组
 conNum <- length(rownames(Control));
 treatNum <- length(rownames(Treat));
@@ -61,7 +63,7 @@ y <- Type;
 fit <- glmnet(x, y, family = "binomial");  # 注意binomial代表二分类
 cvfit <- cv.glmnet(x, y, family = "binomial", nfolds = 10);
 # 绘制交叉验证曲线
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\binomial_cvfit.pdf", width = 6, height = 5.5);
+pdf(file = "save_data\\binomial_cvfit.pdf", width = 6, height = 5.5);
 plot(cvfit);
 dev.off();
 # 根据分析结果筛选特征基因
@@ -74,13 +76,13 @@ lassoGene_exp <- data.frame(
   ID = rownames(data[lassoGene, ]),
   data[lassoGene, ]
 );
-write.table(lassoGene_exp, file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\LASSO.gene.exp.txt", sep = "\t", quote = F, row.names = F, col.names = T
+write.table(lassoGene_exp, file = "save_data\\LASSO.gene.exp.txt", sep = "\t", quote = F, row.names = F, col.names = T
 );
 ```
 ![二分类LASSO回归2](./md-image/二分类LASSO回归2.png){:width=170 height=170}
 共获取到了11个特征基因
 ![二分类LASSO回归3](./md-image/二分类LASSO回归3.png){:width=400 height=400}
-### 随机森林筛选特征基因
+##### 随机森林筛选特征基因
 将多个决策树结合在一起，每次数据集是随机有放回的选出，同时随机选出部分特征作为输入
 需要数据：GSE30219表达矩阵、分组信息(Control.txt/Treat.txt)、差异表达分析结果(diff.Wilcoxon.txt)（用于选择特征基因进行筛选）
 ``` r
@@ -93,19 +95,19 @@ library(randomForest);
 ```
 **标准化表达矩阵（去除平均表达量不到1的基因）**：
 ``` r
-data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\GSE30219.txt", header=T, sep="\t", check.names=F,row.names = 1);
+data <- read.table("data\\GSE30219\\GSE30219.txt", header=T, sep="\t", check.names=F,row.names = 1);
 dimnames <- list(rownames(data), colnames(data));
 data <- matrix(as.numeric(as.matrix(data)), nrow = nrow(data), dimnames = dimnames);
 data <- data[rowMeans(data)>1,];
 data <- normalizeBetweenArrays(data);
-write.table(data.frame(ID = rownames(data), data), file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\normalize.txt", sep = "\t", quote = F, row.names = F);
+write.table(data.frame(ID = rownames(data), data), file = "data\\GSE30219\\normalize.txt", sep = "\t", quote = F, row.names = F);
 ```
 **读取数据，分组，提取差异基因进行分析**：
 提取特定基因：可以是某些特定基因集、差异表达分析结果、单因素cox分析结果等。这里取的是fdr最小的20个基因
 ``` r
-data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\normalize.txt", header = T, sep = "\t", check.names = F, row.names = 1);
-Control <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\Control.txt", header = F, sep = "\t", check.names = F);
-Treat <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\Treat.txt", header = F, sep = "\t", check.names = F);
+data <- read.table("data\\GSE30219\\normalize.txt", header = T, sep = "\t", check.names = F, row.names = 1);
+Control <- read.table("data\\GSE30219\\Control.txt", header = F, sep = "\t", check.names = F);
+Treat <- read.table("data\\GSE30219\\Treat.txt", header = F, sep = "\t", check.names = F);
 # 分组
 conNum <- length(rownames(Control));
 treatNum <- length(rownames(Treat));
@@ -115,7 +117,7 @@ data1 <- data[, Control[, 1]];
 data2 <- data[, Treat[, 1]];
 data <- cbind(data1, data2);
 # 提取特定基因
-genes <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\diff.Wilcoxon.txt", header = T, sep = "\t", check.names = F, row.names = 1);
+genes <- read.table("save_data\\diff.Wilcoxon.txt", header = T, sep = "\t", check.names = F, row.names = 1);
 # 选取fdr最小的20个基因
 genes <- genes[order(genes$fdr, decreasing = F), ];
 data = data[rownames(genes)[1:20], ];
@@ -126,7 +128,7 @@ data = data[rownames(genes)[1:20], ];
 x <- as.matrix(t(data));
 y <- Type;
 rf <- randomForest(as.factor(y) ~ ., data = x, ntree = 500);
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\random_forest.pdf", width = 6, height = 6);
+pdf(file = "save_data\\random_forest.pdf", width = 6, height = 6);
 plot(rf, main = "Random forest", lwd = 2);
 dev.off();
 ```
@@ -140,7 +142,7 @@ rf2 <- randomForest(as.factor(y) ~ ., data = x, ntree = optionTrees);
 # 基因重要性
 importance <- importance(x = rf2);
 # 绘图
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\geneImportance.pdf", width = 6.2, height = 6);
+pdf(file = "save_data\\geneImportance.pdf", width = 6.2, height = 6);
 varImpPlot(rf2, main = "");
 dev.off();
 ```
@@ -155,10 +157,10 @@ rfGenes <- names(rfGenes[rfGenes>2])  ;
 # rfGenes <- names(rfGenes[1:5])          
 # 特征基因表达量
 sigExp <- data[rfGenes, ];
-write.table(data.frame(ID = rownames(sigExp), sigExp), file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\rfGeneExp.txt", sep = "\t", quote = F, col.names = T, row.names = F);
+write.table(data.frame(ID = rownames(sigExp), sigExp), file = "save_data\\rfGeneExp.txt", sep = "\t", quote = F, col.names = T, row.names = F);
 ```
 ![随机森林筛选特征基因4](./md-image/随机森林筛选特征基因4.png){:width=120 height=120}
-### SVM-RFE筛选特征基因
+##### SVM-RFE筛选特征基因
 支持向量机-递归特征消除(support vector machine-recursive feature elimination, SVM-RFE)是基于支持向量机的机器学习方法，通过删减SVM产生的特征向量来寻找最佳变量
 需要数据：上面得到的GSE30219标准化表达矩阵、分组信息(Control.txt/Treat.txt)、差异表达分析结果(diff.Wilcoxon.txt)（用于选择特征基因进行筛选）
 ``` r
@@ -175,9 +177,9 @@ set.seed(123);  # 随机种子固定结果
 **读取数据，分组，提取差异基因进行分析**：（同上面随机森林筛选）
 提取特定基因：可以是某些特定基因集、差异表达分析结果、单因素cox分析结果等。这里取的是logFC绝对值最大的前30个基因
 ``` r
-data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\normalize.txt", header = T, sep = "\t", check.names = F, row.names = 1);
-Control <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\Control.txt", header = F, sep = "\t", check.names = F);
-Treat <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\Treat.txt", header = F, sep = "\t", check.names = F);
+data <- read.table("data\\GSE30219\\normalize.txt", header = T, sep = "\t", check.names = F, row.names = 1);
+Control <- read.table("data\\GSE30219\\Control.txt", header = F, sep = "\t", check.names = F);
+Treat <- read.table("data\\GSE30219\\Treat.txt", header = F, sep = "\t", check.names = F);
 # 分组
 conNum <- length(rownames(Control));
 treatNum <- length(rownames(Treat));
@@ -187,7 +189,7 @@ data1 <- data[, Control[, 1]];
 data2 <- data[, Treat[, 1]];
 data <- cbind(data1, data2);
 # 提取特定基因
-genes <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\diff.Wilcoxon.txt", header = T, sep = "\t", check.names = F, row.names = 1);
+genes <- read.table("save_data\\diff.Wilcoxon.txt", header = T, sep = "\t", check.names = F, row.names = 1);
 # 选取logFC绝对值最大的前30个基因
 genes <- genes[order(abs(genes$logFC), decreasing = T), ];
 data <- data[rownames(genes)[1:30], ];
@@ -206,7 +208,7 @@ Profile <- rfe(
   methods = "svmRadial"
 );
 # 绘图
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\SVM-RFE.pdf", width = 6, height = 5.5);
+pdf(file = "save_data\\SVM-RFE.pdf", width = 6, height = 5.5);
 par(las = 1);
 x <- Profile$results$Variables;
 y <- Profile$results$RMSE;
@@ -233,7 +235,7 @@ featureGenes <- Profile$optVariables;
 sigExp <- data[featureGenes, ];
 write.table(
   data.frame(ID = rownames(sigExp), sigExp), 
-  file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\SVM-RFE.Gene.Exp.txt", 
+  file = "save_data\\SVM-RFE.Gene.Exp.txt", 
   sep = "\t", quote = F, col.names = T, row.names = F
 );
 ```
@@ -245,7 +247,7 @@ write.table(
 使用的临床特征数据：允许空值，包含样本名、Age、Gender、T、N、M、Stage、Subdivision列，其中只有年龄列是数值型，其它均为字符型(T1/N0/M0/FEMALE/Stage II)，Subdivision列取值为Bronchial、L-Lower、L-Upper、R-Lower、R-Middle、R-Upper、unknow
 **读取数据并分组**：
 ``` r
-clinical <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\临床信息三线表clinical.txt", header = T, sep = "\t", check.names = F, row.names = 1);
+clinical <- read.table("data\\临床信息三线表clinical.txt", header = T, sep = "\t", check.names = F, row.names = 1);
 # 将年龄按>60和<=60分组（将数据都变成离散变量）
 clinical[, "Age"] <- ifelse(
   clinical[, "Age"]=="unknow", "unknow", 
@@ -295,7 +297,7 @@ for(i in 1:(ncol(group12clinical)-1)){
   cliStatOut <- rbind(cliStatOut, tableStatOut);
 }
 # 保存结果
-write.table(cliStatOut, file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\result.xls", sep = "\t", quote = F, row.names = F);
+write.table(cliStatOut, file = "save_data\\result.xls", sep = "\t", quote = F, row.names = F);
 ```
 ![临床信息三线表3](./md-image/临床信息三线表3.png){:width=400 height=400}
 注：因为是随机分组，所以每次运行结果不同
@@ -310,9 +312,9 @@ library(pheatmap);
 **读取数据、合并、分组**：
 ``` r
 # 读取数据
-data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\normalize.txt", header = T, sep = "\t", check.names = F, row.names = 1);
-Control <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\Control.txt", header = F, sep = "\t", check.names = F);
-Treat <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\Treat.txt", header = F, sep = "\t", check.names = F);
+data <- read.table("data\\GSE30219\\normalize.txt", header = T, sep = "\t", check.names = F, row.names = 1);
+Control <- read.table("data\\GSE30219\\Control.txt", header = F, sep = "\t", check.names = F);
+Treat <- read.table("data\\GSE30219\\Treat.txt", header = F, sep = "\t", check.names = F);
 # 按控制/治疗的顺序排序
 conData <- data[, Control[, 1]];
 treatData <- data[, Treat[, 1]];
@@ -339,7 +341,7 @@ allDiff <- topTable(fit2, adjust = 'fdr', number = 200000);
 # 保存
 write.table(
   rbind(id = colnames(allDiff), allDiff),
-  file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\Bayes.all.gene.txt", 
+  file = "save_data\\Bayes.all.gene.txt", 
   sep = "\t", quote = F, col.names = F
 );
 ```
@@ -355,12 +357,12 @@ diffGeneExp <- data[row.names(diffSig), ];
 # 保存
 write.table(
   rbind(id = colnames(diffSig), diffSig),
-  file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\Bayes.diff.gene.txt", 
+  file = "save_data\\Bayes.diff.gene.txt", 
   sep = "\t", quote = F, col.names = F
 );
 write.table(
   rbind(id = colnames(diffGeneExp), diffGeneExp),
-  file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\Bayes.diffGeneExp.txt", 
+  file = "save_data\\Bayes.diffGeneExp.txt", 
   sep = "\t", quote = F, col.names = F
 );
 ```
@@ -385,7 +387,7 @@ hmExp <- data[hmGene, ];
 Type <- c(rep("Control", conNum),rep("Tumor", treatNum));  # 分组信息
 names(Type) <- colnames(data);
 Type <- as.data.frame(Type);
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\geo_Bayes_heatmap.pdf", width = 10, height = 7.5);
+pdf(file = "save_data\\geo_Bayes_heatmap.pdf", width = 10, height = 7.5);
 pheatmap(
   hmExp, 
   annotation = Type, 
@@ -399,7 +401,7 @@ pheatmap(
 );
 dev.off();
 # 火山图
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\geo_Bayes_vol.pdf", width = 5, height = 5);
+pdf(file = "save_data\\geo_Bayes_vol.pdf", width = 5, height = 5);
 xMax <- 6;
 yMax <- max(-log10(allDiff$adj.P.Val))+1;
 plot(
@@ -461,9 +463,9 @@ library(ggpubr);
 **读取数据，分组，合并**：
 ``` r
 # 读取数据
-data <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\normalize.txt", header = T, sep = "\t", check.names = F, row.names = 1);
-Control <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\Control.txt", header = F, sep = "\t", check.names = F);
-Treat <- read.table("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\GSE30219\\Treat.txt", header = F, sep = "\t", check.names = F);
+data <- read.table("data\\GSE30219\\normalize.txt", header = T, sep = "\t", check.names = F, row.names = 1);
+Control <- read.table("data\\GSE30219\\Control.txt", header = F, sep = "\t", check.names = F);
+Treat <- read.table("data\\GSE30219\\Treat.txt", header = F, sep = "\t", check.names = F);
 # 分组
 conData <- data[, Control[, 1]];
 treatData <- data[, Treat[, 1]];
@@ -515,7 +517,7 @@ for(i in row.names(data)){
 data <- data[sigGeneVec, , drop=F];
 write.table(
   rbind(ID = colnames(data), data), 
-  file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\diffGeneExp.txt", 
+  file = "save_data\\diffGeneExp.txt", 
   sep = "\t", quote = F, col.names = F
 );
 ```
@@ -549,7 +551,7 @@ p <- ggboxplot(
     label = "p.signif"
   );
 # 根据基因数量修改宽高
-pdf(file = "C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\save_data\\diff.boxplot1.pdf", width = 16, height = 6.5);
+pdf(file = "save_data\\diff.boxplot1.pdf", width = 16, height = 6.5);
 print(p);
 dev.off();
 ```
@@ -589,7 +591,7 @@ myfilter <- champ.filter(
 **读入甲基化数据，进行注释**：
 ``` r
 # 读入甲基化数据
-rt <- fread("C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\甲基化数据\\methylation.450.txt");
+rt <- fread("data\\甲基化数据\\methylation.450.txt");
 rt <- column_to_rownames(rt, var = "ID");
 # 获取探针对应的基因名
 annotation123 <- probe.features[rownames(rt), ];
@@ -607,6 +609,6 @@ rt <- rt[-1, -length(colnames(rt))];
 # 改列名
 colnames(rt)[1] <- "gene";
 # 保存
-write.table(rt, 'C:\\Users\\WangTianHao\\Documents\\GitHub\\R-for-bioinformatics\\b站生信课03\\data\\甲基化数据\\450.txt', sep = "\t", quote = F, row.names = F);
+write.table(rt, 'data\\甲基化数据\\450.txt', sep = "\t", quote = F, row.names = F);
 ```
 ![TCGA甲基化数据注释3](./md-image/TCGA甲基化数据注释3.png){:width=250 height=250}
