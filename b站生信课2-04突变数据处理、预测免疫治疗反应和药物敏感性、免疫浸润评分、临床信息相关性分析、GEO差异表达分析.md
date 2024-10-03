@@ -12,8 +12,9 @@
 
 - [突变数据整理](#突变数据整理)
 - [TIDE预测免疫治疗反应](#tide预测免疫治疗反应)
-- [预测药物敏感性(oncoPredict)](#预测药物敏感性oncopredict)
-- [预测药物敏感性(pRRophetic)](#预测药物敏感性prrophetic)
+- [预测药物敏感性](#预测药物敏感性)
+    - [oncoPredict](#oncopredict)
+    - [pRRophetic](#prrophetic)
 - [免疫浸润评分(estimate)](#免疫浸润评分estimate)
 - [临床信息相关性分析](#临床信息相关性分析)
     - [热图](#热图)
@@ -214,7 +215,8 @@ dev.off();
 ```
 ![TIDE预测免疫治疗反应7](./md-image/TIDE预测免疫治疗反应7.png){:width=400 height=400}
 横坐标是高低风险组，纵坐标是TIDE得分。可以看到低风险组的TIDE低于高风险组，对免疫治疗更敏感
-### 预测药物敏感性(oncoPredict)
+### 预测药物敏感性
+##### oncoPredict
 药物预测需要训练集，一般推荐使用权威数据作为训练集建模，之后预测自己的数据。这里使用GDSC(Genomics of Drug Sensitivity in Cancer)数据库
 使用`oncoPredict`包
 需要数据：tpm表达矩阵、风险得分、2个GDSC文件
@@ -409,7 +411,7 @@ dev.off();
 ```
 ![预测药物敏感性oncoPredict5](./md-image/预测药物敏感性oncoPredict5.png){:width=400 height=400}
 横坐标是不同的药物，纵坐标是药物敏感性，按高/低风险分组（也可以是某个基因的表达量高低）。得分越低，则该药物在该组中越敏感
-### 预测药物敏感性(pRRophetic)
+##### pRRophetic
 使用`pRRophetic`包，它比上面的`oncoPredict`包旧一点，所以要使用R<4.3版本运行，推荐使用上面的`oncoPredict`包
 [安装方法](https://zhuanlan.zhihu.com/p/672440831)
 ``` r
